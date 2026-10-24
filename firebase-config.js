@@ -9,3 +9,5 @@ window.FB_CONFIG={
 };
 // Solo estas cuentas de Google pueden entrar.
 window.FB_ALLOWED=["niltonaquino0201@gmail.com"];
+// Usuario corto para la pantalla de ingreso.
+window.FB_USERS={"nilton":"niltonaquino0201@gmail.com"};
