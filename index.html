@@ -1218,7 +1218,7 @@ function pwModal(){openModal('<div class="sheet-h"><h2>'+(S.tienePass?"Cambiar":
   '<p class="muted" style="margin:0">Usuario: <b>'+esc(Object.keys(window.FB_USERS||{}).find(k=>FB_USERS[k]===String(S.usuario).toLowerCase())||S.usuario)+'</b>. La contraseña debe tener al menos 6 caracteres.</p>'+
   '<form data-form="pwset" class="fields"><label class="f">Nueva contraseña<input type="password" id="pw-1" autocomplete="new-password"></label><label class="f">Repite la contraseña<input type="password" id="pw-2" autocomplete="new-password"></label><p class="err span2" id="pw-err" style="margin:0"></p>'+
   '<div class="row span2" style="justify-content:flex-end"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Guardar contraseña</button></div></form>',true)}
-function nubeErr(e){banner("No se pudo guardar en la nube ("+(e&&e.code||"error")+"). Revisa tu conexión y vuelve a intentarlo.")}
+function nubeErr(e){const c=e&&e.code||"error";banner(/permission/.test(c)?"Firebase rechazó el guardado (permiso denegado). Revisa que las reglas de Firestore estén publicadas y que hayas entrado con tu cuenta autorizada.":"No se pudo guardar en la nube ("+c+"). Revisa tu conexión y vuelve a intentarlo.")}
 let fsUnsubs=[];
 function cortarNube(){fsUnsubs.forEach(f=>{try{f()}catch(e){}});fsUnsubs=[]}
 function wrapQ(q){return{orderBy:(...a)=>wrapQ(q.orderBy(...a)),limit:n=>wrapQ(q.limit(n)),onSnapshot:(...a)=>{const u=q.onSnapshot(...a);fsUnsubs.push(u);return u}}}
