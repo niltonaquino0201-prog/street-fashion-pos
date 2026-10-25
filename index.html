@@ -737,7 +737,8 @@ const bcCache={};
 function barcodePNG(code){if(bcCache[code])return bcCache[code];if(!window.JsBarcode)return "";try{const cv=document.createElement("canvas");JsBarcode(cv,code,{format:isEAN13(code)?"EAN13":"CODE128",width:3,height:90,fontSize:26,margin:6,textMargin:2,flat:true,background:"#ffffff"});return bcCache[code]=cv.toDataURL("image/png")}catch(e){return ""}}
 function labelHTML(p){const b=barcodePNG(p.barcode);return '<div class="lbl"><div class="lq">'+qrSVG(qrText(p))+'</div><div class="li"><div class="ln">'+esc(p.nombre)+'</div><div class="lv">'+esc(variante(p)||p.codigo)+'</div><div class="lp">'+money(p.precio)+"</div>"+(b?'<img class="lb" src="'+b+'" alt="'+esc(p.barcode)+'">':'<div class="mono">'+esc(p.barcode)+"</div>")+"</div></div>"}
 function labelList(){const out=[];(ui.lbl.items||[]).forEach(it=>{const p=prod(it.id);const n=Math.max(0,Math.min(500,Math.round(Number(it.cant)||0)));if(p&&p.barcode)for(let i=0;i<n;i++)out.push(p)});return out}
-function openLabels(items,titulo){
+function openLabels(items,titulo,intento){
+  if(items.some(x=>!prod(x.id))&&(intento||0)<40){setTimeout(()=>openLabels(items,titulo,(intento||0)+1),150);return}
   ui.lbl={items:items.filter(x=>prod(x.id)).map(x=>({id:x.id,cant:String(Math.max(1,x.cant||1))})),fmt:pref.get("lblfmt")||"rollo",titulo:titulo||"Etiquetas"};
   const sinCod=ui.lbl.items.filter(x=>!prod(x.id).barcode);
   const lp=canPrint();const first=prod((ui.lbl.items[0]||{}).id);
