@@ -560,6 +560,9 @@ function vAjustes(){
 }
 
 const VIEWFN={inicio:vInicio,panel:vPanel,vender:vVender,inventario:vInventario,compras:vCompras,ventas:vVentas,ajustes:vAjustes};
+let refocando=false;
+/* al entrar a un campo numérico que solo tiene 0, se limpia para escribir directo */
+document.addEventListener("focusin",e=>{const el=e.target;if(refocando||!el||el.tagName!=="INPUT"||el.type!=="number")return;if(/^0([.,]0+)?$/.test(el.value)){el.value="";}});
 function render(){
   document.querySelectorAll("#nav button").forEach(b=>b.toggleAttribute("aria-current",false)||b.dataset.v===view&&b.setAttribute("aria-current","page"));
   const br=document.querySelector(".brand"),bk=S.empresa.logo||"";if(br.dataset.k!==bk){br.dataset.k=bk;br.innerHTML=bk?'<img src="'+esc(bk)+'" alt="'+esc(S.empresa.razon)+'">':"<b>STREET</b>FASHIÓN <small>SAC</small>"}
@@ -568,7 +571,8 @@ function render(){
   if(S.mode==="login"){$("#app").innerHTML=loginHTML();return}
   const a=document.activeElement,fid=a&&a.id&&$("#app").contains(a)?a.id:null;let ss=null,se=null;try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}
   $("#app").innerHTML=VIEWFN[view]();
-  if(fid){const el=document.getElementById(fid);if(el){el.focus();try{if(ss!==null)el.setSelectionRange(ss,se)}catch(e){}}}
+  if(fid){const el=document.getElementById(fid);if(el){refocando=true;el.focus();refocando=false;let ok=false;try{if(ss!==null){el.setSelectionRange(ss,se);ok=true}}catch(e){}
+    if(!ok&&"value" in el&&el.tagName==="INPUT"){const v=el.value;el.value="";el.value=v}}}
 }
 
 /* ---------- comprobante ---------- */
