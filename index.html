@@ -354,7 +354,7 @@ const pref={get(k){try{return localStorage.getItem("sf-pref-"+k)}catch(e){return
 const canPrint=()=>S.mode==="local"||S.mode==="nube";
 function imprimir(v,fmt){const pa=$("#print-area");const a4=(fmt||(v.tipo==="ticket"?"ticket":"a4"))==="a4";pa.className=a4?"pa-a4":"pa-t";pa.innerHTML=a4?invoiceHTML(v):receiptHTML(v);setTimeout(()=>{try{window.print()}catch(e){}},60)}
 function subscribe(){
-  const onErr=e=>banner("No se pudieron leer los datos ("+(e&&e.code)+"). Recarga la página.");
+  const onErr=e=>{const u=fbAuth&&fbAuth.currentUser;banner("No se pudieron leer los datos ("+(e&&e.code)+"). Recarga la página."+(u?" Datos para soporte: cuenta "+u.email+" · verificada "+u.emailVerified+" · ingreso "+(u.providerData||[]).map(p=>p.providerId).join("+"):""))};
   db.collection("productos").onSnapshot(s=>{S.productos=s.docs.map(d=>({id:d.id,...d.data()}));sortAll();render()},onErr);
   db.collection("ventas").orderBy("fecha","desc").limit(1000).onSnapshot(s=>{S.ventas=s.docs.map(d=>({id:d.id,...d.data()}));sortAll();render()},onErr);
   db.collection("compras").orderBy("fecha","desc").limit(500).onSnapshot(s=>{S.compras=s.docs.map(d=>({id:d.id,...d.data()}));sortAll();render()},onErr);
