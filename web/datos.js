@@ -16,7 +16,7 @@ const NEGOCIO = {
   // Pega aquí el link de cada red. Si queda vacío "", no se muestra.
   facebook: "",
   instagram: "",
-  tiktok: "",
+  tiktok: "https://www.tiktok.com/@grupostreet",
 };
 
 // ------------------------------------------------------------
