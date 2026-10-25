@@ -236,6 +236,14 @@ td .sub{display:block;font-size:12px;color:var(--muted)}
 .login{max-width:400px;margin:40px auto;text-align:center}.login form{display:grid;gap:12px;text-align:left;margin-top:14px}
 .login .lnk{background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;font-size:13px;padding:4px}
 .login .or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:14px 0 10px}.login .or:before,.login .or:after{content:"";flex:1;border-top:1px solid var(--line)}
+.cambox{border-radius:var(--r);overflow:hidden;background:#000;min-height:220px}
+.cambox video{width:100%!important;display:block}
+.camlog{display:grid;gap:4px;max-height:170px;overflow:auto}
+.camrow{font-size:14px;padding:6px 10px;border-radius:8px;background:var(--accent-soft)}
+.camrow.bad{background:#ffe3e3;color:#a10f0f}
+.scanbar{display:flex;gap:8px;align-items:center}.scanbar input{flex:1}
+.btn.cam{white-space:nowrap}
+.sheet .seg{display:flex;flex-wrap:nowrap}.sheet .seg button{flex:1;font-size:13px;padding:8px 6px}
 </style>
 
 <header class="top">
@@ -348,7 +356,7 @@ function subscribe(){
 function banner(t){const b=$("#banner");if(!t){b.hidden=true;return}$("#banner-t").textContent=t;b.hidden=false}
 let toastT;function toast(t){const el=$("#toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2600)}
 function openModal(html,narrow){const s=$("#sheet");s.className="sheet"+(narrow===true?" narrow":narrow==="wide"?" wide":"");s.innerHTML=html;$("#modal").hidden=false;const f=s.querySelector("input,select");if(f)f.focus()}
-function closeModal(){$("#modal").hidden=true;$("#sheet").innerHTML=""}
+function closeModal(){if(camScan){const s=camScan;camScan=null;s.stop().catch(()=>{}).then(()=>{try{s.clear()}catch(e){}})}$("#modal").hidden=true;$("#sheet").innerHTML=""}
 function stockPill(p){const s=Number(p.stock)||0,m=Number(p.stockMin)||0;
   if(s<=0)return '<span class="pill p-bad">Agotado</span>';
   if(s<=m)return '<span class="pill p-warn">Reponer · '+s+'</span>';
@@ -432,7 +440,8 @@ function vVender(){
     :"";
   return '<div class="head"><div><div class="eyebrow">Caja</div><h1>Nueva venta</h1></div></div>'+
   '<div class="pos">'+
-    '<div class="card"><input id="pos-q" type="search" placeholder="Escanea el código de barras o busca por nombre, talla o color" autocomplete="off" data-bind="posQ" data-rr value="'+esc(ui.posQ)+'">'+
+    '<div class="card"><div class="scanbar"><input id="pos-q" type="search" placeholder="Escanea el código de barras o busca por nombre, talla o color" autocomplete="off" data-bind="posQ" data-rr value="'+esc(ui.posQ)+'"><button class="btn pri cam" data-act="camara" title="Escanear con la cámara">📷 Escanear</button></div>'+
+      (S.mode==="nube"?'<label class="row muted" style="gap:8px;margin-top:8px;font-size:13px;cursor:pointer"><input type="checkbox" data-act="recibir" style="width:auto"'+(recibeEscaneos()?" checked":"")+'> Recibir aquí lo que escanean los celulares</label>':"")+
       (S.productos.length?"":'<p class="empty">Todavía no hay productos. Créalos en <button class="btn sm" data-act="go" data-v="inventario">Inventario</button></p>')+
       '<div class="prods">'+list.map(p=>{const inCart=(ui.cart.find(c=>c.id===p.id)||{}).cant||0;const left=(p.stock||0)-inCart;
         return '<button class="prod" data-act="add" data-id="'+p.id+'"'+(left<=0?" disabled":"")+'><span class="pn">'+esc(p.nombre)+'</span><span class="pv">'+esc(variante(p)||p.categoria)+'</span><span class="pp"><b>'+money(p.precio)+"</b><span>"+(p.stock<=0?"agotado":left+" disp.")+"</span></span></button>"}).join("")+"</div></div>"+
@@ -790,7 +799,7 @@ async function guardarDevolucion(id){
   try{
     const nv={...strip(v),devoluciones:[...(v.devoluciones||[]),dev]};
     await store.set("ventas",id,nv);
-    if(alStock)for(const it of items){const p=prod(it.productoId);if(p)await store.set("productos",p.id,{...strip(p),stock:(Number(p.stock)||0)+it.cant})}
+    if(alStock)for(const it of items){if(prod(it.productoId))await moverStock(it.productoId,it.cant)}
     lastVenta={id,...nv};showVenta(lastVenta,false);toast("Devolución registrada: "+money(monto)+(alStock?" · stock actualizado":""));
   }catch(e){err.textContent="No se pudo guardar ("+(e&&e.code||"error")+").";if(btn)btn.disabled=false}
 }
@@ -823,7 +832,7 @@ async function guardarDatos(id){const v=S.ventas.find(x=>x.id===id);if(!v)return
   const pago=$("#cd-pago").value;const nv={...strip(v),cliente:{doc,nombre:nom,direccion:dir},pago,editadaEl:new Date().toISOString()};
   if(pago!=="Efectivo"){nv.recibido=0;nv.vuelto=0}
   await store.set("ventas",id,nv);lastVenta={id,...nv};showVenta(lastVenta,false);toast("Datos corregidos")}
-async function restaurarStock(v){for(const it of v.items||[]){const back=it.cant-devueltas(v,it.productoId,true);const p=prod(it.productoId);if(p&&back>0)await store.set("productos",p.id,{...strip(p),stock:(Number(p.stock)||0)+back})}}
+async function restaurarStock(v){for(const it of v.items||[]){const back=it.cant-devueltas(v,it.productoId,true);if(prod(it.productoId)&&back>0)await moverStock(it.productoId,back)}}
 async function corregirProductos(id){const v=S.ventas.find(x=>x.id===id);if(!v||v.estado==="anulada")return;
   await store.set("ventas",id,{...strip(v),estado:"anulada",anuladaEl:new Date().toISOString(),motivoAnulacion:"Corregida en caja"});
   await restaurarStock(v);
@@ -879,7 +888,7 @@ async function guardarEdicion(id){
     ediciones:[...(v.ediciones||[]),{fecha:new Date().toISOString(),cambios,totalAntes:v.total,totalDespues:total,motivo:($("#ed-mot").value||"").trim()}]};
   const btn=document.querySelector('[data-act="edsave"]');if(btn)btn.disabled=true;
   try{await store.set("ventas",id,nv);
-    for(const c of cambios){const p=prod(c.productoId);if(p)await store.set("productos",p.id,{...strip(p),stock:(Number(p.stock)||0)+(c.antes-c.despues)})}
+    for(const c of cambios){if(prod(c.productoId))await moverStock(c.productoId,c.antes-c.despues)}
     lastVenta={id,...nv};showVenta(lastVenta,false);toast("Venta corregida: "+money(v.total)+" → "+money(total)+"; stock ajustado")}
   catch(e){err.textContent="No se pudo guardar ("+(e&&e.code||"error")+").";if(btn)btn.disabled=false}
 }
@@ -904,13 +913,16 @@ async function cobrar(){
     bruto,descuento:desc,gravada:grav,igv:r2(total-grav),total,pago:ui.pago,recibido:rec,vuelto:rec?r2(rec-total):0,estado:"emitida"};
   ui.busy=true;render();
   try{
-    const id=uid();
+    let id=uid();
+    if(S.mode==="nube"&&fsRaw){const r=await cobrarNube(items,serie,v);id=r.id;delete r.id;Object.assign(v,r)}
+    else{
     await store.set("config","correlativos",{...S.correl,[serie]:n});
     await store.set("ventas",id,v);
     for(const {c,p} of items)await store.set("productos",p.id,{...strip(p),stock:(Number(p.stock)||0)-c.cant});
+    }
     ui.cart=[];ui.cli={doc:"",nombre:"",direccion:""};ui.recibido="";ui.descuento="";ui.busy=false;render();
     lastVenta={id,...v};showVenta(lastVenta,true);if(canPrint()&&pref.get("autoprint")==="1")imprimir(lastVenta);
-  }catch(e){ui.busy=false;ui.posErr="No se pudo guardar la venta ("+(e&&e.code||"error")+"). Inténtalo de nuevo.";render()}
+  }catch(e){ui.busy=false;const c=e&&e.code||"error";ui.posErr=c==="sin-stock"?e.msg:(c==="sin-internet"||c==="unavailable")?"Sin conexión a internet. Para cobrar en la nube se necesita internet; revisa tu conexión e inténtalo de nuevo.":"No se pudo guardar la venta ("+c+"). Inténtalo de nuevo.";render()}
 }
 async function guardarCompra(){
   ui.compErr="";const c=ui.compra;
@@ -922,7 +934,7 @@ async function guardarCompra(){
   ui.busy=true;render();
   try{
     await store.set("compras",uid(),{fecha,proveedor:c.proveedor.trim(),doc:c.doc.trim(),items,total:r2(items.reduce((a,i)=>a+i.cant*i.costo,0))});
-    for(const [pid,a] of Object.entries(agg)){const p=prod(pid);if(!p)continue;await store.set("productos",pid,{...strip(p),stock:(Number(p.stock)||0)+a.cant,costo:a.costo>0?a.costo:p.costo})}
+    for(const [pid,a] of Object.entries(agg)){const p=prod(pid);if(!p)continue;await moverStock(pid,a.cant,a.costo>0?{costo:a.costo}:null)}
     ui.compra={proveedor:"",doc:"",fecha:ymd(new Date()),lineas:[{pid:"",cant:"1",costo:""}]};ui.busy=false;render();toast("Compra registrada y stock actualizado");openLabels(Object.entries(agg).map(([id,a])=>({id,cant:a.cant})),"Etiquetas del lote recibido");
   }catch(e){ui.busy=false;ui.compErr="No se pudo guardar la compra ("+(e&&e.code||"error")+").";render()}
 }
@@ -961,6 +973,10 @@ const ACT={
   autoprint:(d,b)=>{pref.set("autoprint",pref.get("autoprint")==="1"?"0":"1");render()},
   backup:()=>{const data=JSON.stringify({sistema:"STREET FASHIÓN POS",version:1,fecha:new Date().toISOString(),productos:S.productos,ventas:S.ventas,compras:S.compras,empresa:S.empresa,correl:S.correl});saveFile("copia-street-fashion-"+ymd(new Date())+".json",data,null);pref.set("lastbackup",new Date().toISOString());toast("Copia de seguridad descargada");render()},
   restore:()=>{$("#restore-file").click()},
+  camara:()=>abrirCamara(),
+  camclose:()=>cerrarCamara(),
+  camdest:d=>{pref.set("scandest",d.k);document.querySelectorAll('[data-act="camdest"]').forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===d.k)))},
+  recibir:(d,b)=>{pref.set("recibir",b.checked?"1":"0");escucharEscaneos();toast(b.checked?"Este equipo recibirá los escaneos de los celulares":"Este equipo ya no recibe escaneos")},
   glogin:async()=>{nubeMsg="";try{sessionStorage.setItem("sf-sesion","1")}catch(e){}const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:"select_account"});
     try{await fbAuth.signInWithPopup(pr)}catch(e){if(e&&/popup-blocked|operation-not-supported/.test(e.code||""))fbAuth.signInWithRedirect(pr);else if(!/popup-closed|cancelled-popup/.test(e&&e.code||"")){nubeMsg="No se pudo entrar ("+(e&&e.code||"error")+").";render()}}},
   glogout:()=>{try{sessionStorage.removeItem("sf-sesion")}catch(e){}cortarNube();if(fbAuth)fbAuth.signOut();S.mode="login";db=null;render()},
@@ -1111,6 +1127,75 @@ function vInicio(){
 }
 
 /* ---------- nube (Firebase) ---------- */
+let fsRaw=null;
+/* ---------- escáner con cámara ---------- */
+const H5Q_URL="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js";
+let camScan=null,camLast={c:"",t:0},camLog=[];
+function cargarH5Q(){if(window.Html5Qrcode)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement("script");s.src=H5Q_URL;s.onload=res;s.onerror=()=>rej(new Error("lib"));document.head.appendChild(s)})}
+function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=1250;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();setTimeout(()=>{o.stop();a.close()},90)}catch(e){}try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}}
+function scanDestino(){return S.mode==="nube"&&pref.get("scandest")==="caja"?"caja":"aqui"}
+function camLogHTML(){return camLog.length?camLog.slice(0,6).map(x=>'<div class="camrow'+(x.ok?"":" bad")+'">'+(x.ok?"✓ ":"✗ ")+esc(x.t)+"</div>").join(""):'<p class="muted" style="margin:0;font-size:13px">Apunta la cámara al código de barras o QR de la etiqueta.</p>'}
+function camPintar(){const l=$("#cam-log");if(l)l.innerHTML=camLogHTML()}
+async function abrirCamara(){
+  camLog=[];
+  const dest=scanDestino();
+  openModal('<div class="sheet-h"><h2>Escanear con cámara</h2><button class="x" data-act="camclose" aria-label="Cerrar">×</button></div>'+
+    (S.mode==="nube"?'<div class="seg" role="group" aria-label="Destino" style="width:100%"><button data-act="camdest" data-k="aqui" aria-pressed="'+(dest==="aqui")+'">Vender en este celular</button><button data-act="camdest" data-k="caja" aria-pressed="'+(dest==="caja")+'">Enviar a la caja (PC)</button></div>':"")+
+    '<div id="cam-box" class="cambox"><p class="muted" style="margin:0;padding:40px 10px;text-align:center">Abriendo la cámara…</p></div>'+
+    '<div id="cam-log" class="camlog">'+camLogHTML()+'</div>'+
+    '<div class="row" style="justify-content:flex-end"><button class="btn pri" data-act="camclose">Listo</button></div>');
+  try{await cargarH5Q()}catch(e){$("#cam-box").innerHTML='<p class="err" style="padding:16px">No se pudo cargar el lector. Revisa tu conexión a internet.</p>';return}
+  const F=window.Html5QrcodeSupportedFormats;
+  camScan=new Html5Qrcode("cam-box",{formatsToSupport:[F.EAN_13,F.EAN_8,F.CODE_128,F.CODE_39,F.UPC_A,F.UPC_E,F.QR_CODE],experimentalFeatures:{useBarCodeDetectorIfSupported:true},verbose:false});
+  try{await camScan.start({facingMode:"environment"},{fps:12,qrbox:(w,h)=>({width:Math.floor(Math.min(w*.9,340)),height:Math.floor(Math.min(h*.6,200))})},leido,()=>{})}
+  catch(e){const m=String(e&&e.name||e||"");$("#cam-box").innerHTML='<p class="err" style="padding:16px">'+(/NotAllowed|Permission/i.test(m)?"No diste permiso para usar la cámara. Actívalo en la configuración del navegador (ícono del candado junto a la dirección) y vuelve a intentarlo.":/NotFound|Overconstrained/i.test(m)?"Este equipo no tiene cámara disponible.":"No se pudo abrir la cámara ("+esc(m)+").")+"</p>";camScan=null}
+}
+async function cerrarCamara(){const s=camScan;camScan=null;if(s){try{await s.stop()}catch(e){}try{s.clear()}catch(e){}}closeModal();render()}
+async function leido(txt){
+  const now=Date.now();if(txt===camLast.c&&now-camLast.t<1500){camLast.t=now;return}camLast={c:txt,t:now};
+  const p=findByCode(txt);
+  if(!p){camLog.unshift({ok:false,t:"No existe el código "+String(txt).split("|")[0]});camPintar();try{navigator.vibrate&&navigator.vibrate([40,60,40])}catch(e){}return}
+  beep();
+  if(scanDestino()==="caja"){
+    try{await store.set("escaneos",uid(),{codigo:p.barcode||p.codigo||txt,productoId:p.id,fecha:new Date().toISOString()});camLog.unshift({ok:true,t:"Enviado a la caja: "+plabel(p)})}
+    catch(e){camLog.unshift({ok:false,t:"No se pudo enviar ("+(e&&e.code||"error")+")"})}
+    camPintar();return}
+  const c=ui.cart.find(x=>x.id===p.id),enCarro=c?c.cant:0;
+  if(enCarro>=(Number(p.stock)||0)){camLog.unshift({ok:false,t:"Sin stock: "+plabel(p)});camPintar();return}
+  if(c)c.cant++;else ui.cart.push({id:p.id,cant:1});
+  camLog.unshift({ok:true,t:"+1 "+plabel(p)+" · "+money(p.precio)});camPintar();
+  if(view!=="vender"){view="vender";try{history.replaceState(null,"","#vender")}catch(e){}}
+}
+/* la caja (PC) recibe lo que escanean los celulares */
+let escUnsub=null;const escHechos=new Set();
+function recibeEscaneos(){return S.mode==="nube"&&pref.get("recibir")!=="0"&&!(window.matchMedia&&matchMedia("(pointer:coarse)").matches&&pref.get("recibir")!=="1")}
+function escucharEscaneos(){
+  if(escUnsub){try{escUnsub()}catch(e){}escUnsub=null}
+  if(!recibeEscaneos()||!fsRaw)return;
+  escUnsub=fsRaw.collection("escaneos").onSnapshot(s=>{s.docChanges().forEach(ch=>{if(ch.type!=="added")return;const id=ch.doc.id,d=ch.doc.data();if(escHechos.has(id))return;escHechos.add(id);
+    const ref=fsRaw.collection("escaneos").doc(id);
+    if(Date.now()-new Date(d.fecha).getTime()>120000){ref.delete().catch(()=>{});return}
+    fsRaw.runTransaction(async t=>{const x=await t.get(ref);if(!x.exists)return false;t.delete(ref);return true}).then(ok=>{if(ok)handleScan(d.codigo)}).catch(()=>{})})},()=>{});
+  fsUnsubs.push(()=>{if(escUnsub){escUnsub();escUnsub=null}});
+}
+/* stock: en la nube se suma o resta en el servidor para que dos equipos no se pisen */
+async function moverStock(id,delta,extra){
+  if(S.mode==="nube"&&fsRaw){fsRaw.collection("productos").doc(id).update({stock:firebase.firestore.FieldValue.increment(delta),...(extra||{})}).catch(nubeErr);return}
+  const p=prod(id);if(p)await store.set("productos",id,{...strip(p),stock:(Number(p.stock)||0)+delta,...(extra||{})})}
+async function cobrarNube(items,serie,v){
+  const ref=fsRaw.collection("ventas").doc(uid());
+  const tx=fsRaw.runTransaction(async t=>{
+    const cref=fsRaw.collection("config").doc("correlativos"),cs=await t.get(cref),cur=cs.exists?cs.data():{};
+    const prefs=items.map(({p})=>fsRaw.collection("productos").doc(p.id)),snaps=[];for(const r of prefs)snaps.push(await t.get(r));
+    snaps.forEach((s,i)=>{const st=Number((s.data()||{}).stock)||0;if(items[i].c.cant>st){const e=new Error("stock");e.code="sin-stock";e.msg="No hay stock suficiente de "+items[i].p.nombre+" (quedan "+st+").";throw e}});
+    const n=(Number(cur[serie])||0)+1;const vv={...v,correlativo:n,numero:serie+"-"+pad(n,8)};
+    t.set(cref,{...cur,[serie]:n});t.set(ref,vv);
+    snaps.forEach((s,i)=>t.update(prefs[i],{stock:firebase.firestore.FieldValue.increment(-items[i].c.cant)}));
+    return vv});
+  const to=new Promise((_,rej)=>setTimeout(()=>{const e=new Error("timeout");e.code="sin-internet";rej(e)},20000));
+  const vv=await Promise.race([tx,to]);return {id:ref.id,...vv}}
+
+
 let fbAuth=null,nubeMsg="";
 function loginHTML(){return '<div class="card login">'+(DEF_EMP.logo?'<img src="'+esc(DEF_EMP.logo)+'" alt="" style="width:120px;height:120px;object-fit:contain;margin:0 auto 10px;display:block;background:#fff;border-radius:50%;padding:6px">':"")+
   '<h2 style="margin:0 0 4px">STREET FASHIÓN SAC</h2><p class="muted" style="margin:0">Sistema de ventas e inventario</p>'+
@@ -1138,7 +1223,7 @@ async function importarDatos(o){
   for(const [k,id,x] of tareas)await store.set(k,id,x);
 }
 function startNube(){
-  firebase.initializeApp(window.FB_CONFIG);fbAuth=firebase.auth();const fs=firebase.firestore();
+  firebase.initializeApp(window.FB_CONFIG);fbAuth=firebase.auth();const fs=firebase.firestore();fsRaw=fs;
   try{fs.settings({ignoreUndefinedProperties:true,merge:true})}catch(e){}
   try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
   const permitidos=(window.FB_ALLOWED||[]).map(x=>String(x).toLowerCase());
@@ -1151,7 +1236,7 @@ function startNube(){
     if(!u){cortarNube();db=null;S.mode="login";render();return}
     if(permitidos.length&&!permitidos.includes(String(u.email).toLowerCase())){nubeMsg="La cuenta "+u.email+" no tiene acceso a este sistema.";fbAuth.signOut();return}
     nubeMsg="";S.usuario=u.email;S.usuarioNombre=u.displayName||"";S.tienePass=(u.providerData||[]).some(p=>p&&p.providerId==="password");
-    if(S.mode!=="nube"){db=wrapFS(fs);S.mode="nube";view="inicio";try{history.replaceState(null,"","#inicio")}catch(e){}subscribe()}render()});
+    if(S.mode!=="nube"){db=wrapFS(fs);S.mode="nube";view="inicio";try{history.replaceState(null,"","#inicio")}catch(e){}subscribe();escucharEscaneos()}render()});
 }
 /* ---------- arranque ---------- */
 async function start(){
