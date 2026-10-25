@@ -10,7 +10,7 @@ const NEGOCIO = {
   whatsapp: "51943369367",          // 51 + número, sin espacios
   telefonoVisible: "943 369 367",
   email: "niltonaquino0201@gmail.com",
-  direccion: "Calle Eduardo Correa 462, Santa Luzmila, Comas, Lima",
+  direccion: "Villa Casagrande, La Arena, Piura",
   horario: "",                      // ej: "Lunes a sábado de 10:00 a. m. a 9:00 p. m."
 
   // Pega aquí el link de cada red. Si queda vacío "", no se muestra.
