@@ -1297,13 +1297,10 @@ const IC={
   g:'<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C1 16.6 0 20.2 0 24s.9 7.4 2.7 10.7l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.2-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>'};
 function loginHTML(){const L=DEF_EMP.logo,img=L?'<img src="'+esc(L)+'" alt="Street Fashión">':"";
   const ph=PORTADAS.map((u,i)=>'<div class="ph'+(i?"":" on")+'" style="background-image:url(\''+esc(u)+'\')"></div>').join("");
-  const pol=PORTADAS.length>2?'<div class="p-polas"><div class="pol"><div style="background-image:url(\''+esc(PORTADAS[1])+'\')"></div></div><div class="pol"><div style="background-image:url(\''+esc(PORTADAS[2])+'\')"></div></div><b>OVERSIZE · BAGGY</b></div>':"";
   return '<div class="portada"><div class="p-bg">'+ph+'</div>'+
   '<section class="p-hero"><div><div class="p-brand">'+img+'<b>STREET FASHIÓN SAC</b><span class="p-slogan">Elevando tu estilo<br>a otro nivel</span></div>'+
-  '<ul class="p-feat"><li>'+IC.shirt+'Ropa<br>urbana</li><li>'+IC.shield+'Calidad<br>garantizada</li><li>'+IC.truck+'Envíos<br>a todo el Perú</li></ul>'+
-  '<div class="p-badge">'+IC.crown+'URBAN<small>STYLE</small></div></div>'+pol+
-  '<div class="p-head"><span class="k">Moda urbana</span><h1>PARA TODOS<em>TU ESTILO, TU ACTITUD</em></h1>'+
-  '<div class="p-pill"><span>'+IC.users+'Para hombres<br>y mujeres</span><i></i><span>'+IC.star+'Las mejores marcas<br>y tendencias</span></div></div></section>'+
+  '</div>'+
+  '<div class="p-head"><span class="k">Moda urbana</span><h1>PARA TODOS</h1></div></section>'+
   '<section class="p-side"><div class="p-box"><div class="p-logo">'+img+'<b>STREET FASHIÓN SAC</b><small>Sistema de gestión de tienda</small></div>'+
   '<h2>¡Bienvenido de vuelta! '+IC.crown+'</h2><p class="sub">Ingresa tus datos para continuar</p>'+
   '<form data-form="login"><label>Usuario<span class="p-in">'+IC.user+'<input id="lg-u" autocomplete="username" autocapitalize="none" placeholder="Tu usuario o correo"></span></label>'+
