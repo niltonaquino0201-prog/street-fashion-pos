@@ -6,6 +6,6 @@ self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 self.addEventListener("fetch",e=>{const r=e.request,u=new URL(r.url);
   if(r.method!=="GET")return;
   const lib=/^(www\.gstatic\.com|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net)$/.test(u.hostname)&&!u.pathname.includes("/__/");
-  if(u.origin===location.origin){e.respondWith(fetch(r).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(r,cp));return res}).catch(()=>caches.match(r).then(x=>x||caches.match("index.html"))));return}
+  if(u.origin===location.origin){e.respondWith(fetch(r.url,{cache:"no-cache",credentials:"same-origin"}).then(res=>{const cp=res.clone();if(res.ok)caches.open(C).then(c=>c.put(r,cp));return res}).catch(()=>caches.match(r).then(x=>x||caches.match("index.html"))));return}
   if(lib)e.respondWith(caches.match(r).then(x=>x||fetch(r).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(r,cp));return res})));
 });
