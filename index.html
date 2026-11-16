@@ -1,5 +1,13 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STREET FASHIÓN POS</title><meta name="theme-color" content="#111111"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STREET FASHIÓN POS</title><meta name="theme-color" content="#111111"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>/* apariencia de este equipo: modo claro/oscuro/automático y colores elegidos en Ajustes (claro por defecto) */
+window.aplicarApariencia=function(){const g=k=>{try{return localStorage.getItem("sf-pref-"+k)||""}catch(e){return ""}},r=document.documentElement,t=g("tema")||"light";
+  if(t==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",t);
+  const tinta=c=>{const n=parseInt(c.slice(1),16),l=(0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255;return l>0.6?"#14161c":"#ffffff"};
+  const a=g("acento"),b=g("barra"),ok=c=>/^#[0-9a-f]{6}$/i.test(c);
+  if(ok(a)){r.style.setProperty("--accent",a);r.style.setProperty("--accent-ink",tinta(a));r.style.setProperty("--accent-soft","color-mix(in srgb,"+a+" 18%,var(--surface))")}else["--accent","--accent-ink","--accent-soft"].forEach(k=>r.style.removeProperty(k));
+  if(ok(b)){r.style.setProperty("--tag",b);r.style.setProperty("--tag-ink",tinta(b))}else["--tag","--tag-ink"].forEach(k=>r.style.removeProperty(k))};
+aplicarApariencia();</script>
+</head><body>
 <title>Street Fashión POS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +45,16 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--tag);color:var(--tag-ink)}
 .top-in{display:flex;align-items:center;gap:20px;padding-block:10px;flex-wrap:wrap}
+.tema-btn{margin-left:auto;width:36px;height:36px;border-radius:50%;border:1px solid color-mix(in srgb,var(--tag-ink) 25%,transparent);background:transparent;color:var(--tag-ink);font-size:17px;cursor:pointer;flex:none}
+.ap-fila{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 0;border-top:1px solid var(--line)}
+.ap-fila:first-of-type{border-top:0}
+.ap-l{flex:0 0 260px;font-weight:600;font-size:14px}
+.ap-sws{display:flex;flex-wrap:wrap;gap:8px}
+.ap-sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;display:grid;place-items:center;color:var(--muted);font-size:15px;position:relative;padding:0}
+.ap-sw.on{outline:3px solid var(--ink);outline-offset:2px}
+.ap-pick{background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);color:#fff;font-weight:800;text-shadow:0 0 3px #000}
+.ap-pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.tema-btn:hover{background:color-mix(in srgb,var(--tag-ink) 12%,transparent)}
 .brand{font-family:var(--f-display);font-weight:800;font-size:17px;letter-spacing:.02em;line-height:1;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .brand b{background:var(--accent);color:#fff;padding:4px 6px;border-radius:4px;font-weight:800}
 .brand small{font-family:var(--f-mono);font-weight:400;font-size:10px;opacity:.6;letter-spacing:.08em}
@@ -338,6 +356,7 @@ body.is-login main#app{max-width:none;padding:0;margin:0;display:block}
       <button data-act="go" data-v="finanzas">Finanzas</button>
       <button data-act="go" data-v="ajustes">Ajustes</button>
     </nav>
+    <button class="tema-btn" data-act="tema" id="tema-btn" aria-label="Cambiar a modo oscuro" title="Cambiar claro / oscuro"></button>
   </div>
 </header>
 <div id="banner" class="banner" hidden><div class="wrap" id="banner-t"></div></div>
@@ -892,7 +911,7 @@ function vVentas(){
 
 function vAjustes(){
   const e=S.empresa;const nEj=["productos","ventas","compras"].reduce((a,k)=>a+S[k].filter(x=>x.ejemplo).length,0);
-  return '<div class="head"><div><div class="eyebrow">Ajustes</div><h1>Datos de la empresa</h1><p>Aparecen en el encabezado de tickets, boletas y facturas.</p></div></div>'+
+  return '<div class="head"><div><div class="eyebrow">Ajustes</div><h1>Datos de la empresa</h1><p>Aparecen en el encabezado de tickets, boletas y facturas.</p></div></div>'+aparienciaCard()+
   '<div class="card"><div class="card-h"><h2>Logo de la empresa</h2></div><div class="row" style="gap:16px">'+(e.logo?'<img src="'+esc(e.logo)+'" alt="Logo actual" style="max-height:90px;max-width:220px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px">':'<span class="muted">Aún no has subido el logo. Sale en la boleta, la factura y el ticket.</span>')+
     '<div class="row"><button class="btn pri" data-act="logoup">'+(e.logo?"Cambiar logo":"Subir logo")+'</button>'+(e.logo?'<button class="btn" data-act="logodel">Quitar</button>':"")+'<input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" hidden></div></div><p class="muted" style="margin-bottom:0;font-size:13px">PNG o JPG. Para el ticket térmico se ve mejor un logo en blanco y negro.</p></div>'+
   '<div class="card"><form data-form="empresa" class="fields">'+
@@ -922,7 +941,22 @@ const VIEWFN={inicio:vInicio,panel:vPanel,vender:vVender,pedidos:vPedidos,invent
 let refocando=false;
 /* al entrar a un campo numérico que solo tiene 0, se limpia para escribir directo */
 document.addEventListener("focusin",e=>{const el=e.target;if(refocando||!el||el.tagName!=="INPUT"||el.type!=="number")return;if(/^0([.,]0+)?$/.test(el.value)){el.value="";}});
+const esOscuro=()=>{const t=document.documentElement.getAttribute("data-theme");return t?t==="dark":!!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)};
+const AP_ACENTOS=["#2a43ff","#ff2d87","#ff8a00","#12a150","#8b3dff","#00a3c4","#c9a96e","#e5383b"],AP_BARRAS=["#14161c","#1f2a44","#4a1020","#0f3d2e","#3b2a1a","#ffffff"];
+function aparienciaCard(){
+  const t=pref.get("tema")||"light",ac=pref.get("acento")||"",ba=pref.get("barra")||"";
+  const sw=(k,c,sel,lbl)=>'<button type="button" class="ap-sw'+(sel?" on":"")+'" data-act="apcolor" data-k="'+k+'" data-c="'+c+'" title="'+(lbl||c)+'" aria-label="'+(lbl||c)+'" style="background:'+(c||"transparent")+'">'+(c?"":"↺")+"</button>";
+  const fila=(k,lista,cur,lbl)=>'<div class="ap-fila"><span class="ap-l">'+lbl+'</span><div class="ap-sws">'+sw(k,"",!cur,"Color original")+lista.map(c=>sw(k,c,cur.toLowerCase()===c)).join("")+
+    '<label class="ap-sw ap-pick" title="Elegir otro color"><input type="color" data-apk="'+k+'" value="'+(cur||"#2a43ff")+'">+</label></div></div>';
+  return '<div class="card"><div class="card-h"><h2>Apariencia</h2><span class="muted">Se guarda en este equipo</span></div>'+
+    '<div class="ap-fila"><span class="ap-l">Modo</span><div class="seg" role="group" aria-label="Modo">'+[["light","Claro"],["dark","Oscuro"],["auto","Automático"]].map(([k,l])=>'<button data-act="apmodo" data-k="'+k+'" aria-pressed="'+(t===k)+'">'+l+"</button>").join("")+"</div></div>"+
+    fila("acento",AP_ACENTOS,ac,"Color principal (botones y resaltados)")+fila("barra",AP_BARRAS,ba,"Color de la barra superior")+"</div>";
+}
+document.addEventListener("input",e=>{const el=e.target;if(!el.dataset||el.dataset.apk===undefined)return;pref.set(el.dataset.apk,el.value);aplicarApariencia()});
+document.addEventListener("change",e=>{const el=e.target;if(el.dataset&&el.dataset.apk!==undefined)render()});
+function pintarTema(){const b=$("#tema-btn");if(!b)return;const osc=esOscuro();b.textContent=osc?"☀":"☾";b.setAttribute("aria-label",osc?"Cambiar a modo claro":"Cambiar a modo oscuro")}
 function render(){
+  pintarTema();
   document.querySelectorAll("#nav button").forEach(b=>b.toggleAttribute("aria-current",false)||b.dataset.v===view&&b.setAttribute("aria-current","page"));
   const br=document.querySelector(".brand"),bk=S.empresa.logo||"";if(br.dataset.k!==bk){br.dataset.k=bk;br.innerHTML=bk?'<img src="'+esc(bk)+'" alt="'+esc(S.empresa.razon)+'">':"<b>STREET</b>FASHIÓN <small>SAC</small>"}
   if(S.mode==="cargando")return;
@@ -1331,6 +1365,9 @@ async function saveFile(name,data,msgEl){
 function armed(b){if(b.classList.contains("armed"))return true;b.classList.add("armed");const t=b.textContent;b.textContent="Toca otra vez para confirmar";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent=t}},4000);return false}
 
 const ACT={
+  tema:()=>{pref.set("tema",esOscuro()?"light":"dark");aplicarApariencia();render()},
+  apmodo:d=>{pref.set("tema",d.k);aplicarApariencia();render()},
+  apcolor:d=>{pref.set(d.k,d.c||"");aplicarApariencia();render()},
   verpw:()=>{const i=$("#lg-p");if(i){i.type=i.type==="password"?"text":"password";i.focus()}},
   go:d=>{if(!puede(d.v)){toast("No tienes acceso a ese módulo");return}view=d.v;try{history.replaceState(null,"","#"+view)}catch(e){}render();window.scrollTo(0,0);if(view==="vender"){const i=$("#pos-q");if(i)i.focus()}},
   per:d=>{ui.periodo=d.k;render()},
