@@ -173,6 +173,9 @@ footer .brand span{color:var(--white)}
 .fpe .op:has(input:checked){border-color:var(--ink)}
 .fpe .op input{margin-top:4px;accent-color:var(--ink)}
 .fpe .op small{display:block;color:var(--muted);font-size:13px}
+.qr{display:none;width:100%;max-width:260px;margin-top:10px;border-radius:8px;border:1px solid var(--line)}
+.fpe .op:has(input:checked) .qr,.qr-ok{display:block}
+.qr-ok{margin:12px auto 0}
 .err{color:#b3261e;font-size:14px;min-height:1px;margin-top:10px}
 .ok{text-align:center}.ok .m-tit{margin:10px 0}
 .ok-i{width:60px;height:60px;border-radius:50%;background:var(--wa);color:#fff;font-size:32px;display:grid;place-items:center;margin:0 auto}
@@ -460,7 +463,7 @@ footer .brand span{color:var(--white)}
     const filas = carrito.map((c, i) => { const v = varDe(c.id);
       return '<div class="item"><img src="' + esc(fotoDe(v.grupo) || "logo.png") + '" alt=""><div><b>' + esc(v.nombre) + "</b><small>" + esc([v.talla && "Talla " + v.talla, v.color].filter(Boolean).join(" · ")) + "</small>" +
         '<div class="cant sm"><button data-i="' + i + '" data-d="-1" aria-label="Menos">−</button><span>' + c.cant + '</span><button data-i="' + i + '" data-d="1" aria-label="Más"' + (c.cant >= v.stock ? " disabled" : "") + ">+</button></div></div><b>" + soles(v.precio * c.cant) + "</b></div>"; }).join("");
-    const pagos = PAGOS_WEB.map(p => '<label class="op"><input type="radio" name="pago" value="' + esc(p.nombre) + '"' + (form.pago === p.nombre ? " checked" : "") + "><span><b>" + esc(p.nombre) + "</b><small>" + esc(p.detalle) + "</small></span></label>").join("");
+    const pagos = PAGOS_WEB.map(p => '<label class="op"><input type="radio" name="pago" value="' + esc(p.nombre) + '"' + (form.pago === p.nombre ? " checked" : "") + "><span><b>" + esc(p.nombre) + "</b><small>" + esc(p.detalle) + "</small>" + (p.qr ? '<img class="qr" src="' + esc(p.qr) + '" alt="QR de ' + esc(p.nombre) + '">' : "") + "</span></label>").join("");
     abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><h3 class="m-tit">Mi pedido</h3>' + filas +
       '<div class="tot"><span>Total</span><b>' + soles(totalCarrito()) + "</b></div>" +
       '<form id="f-ped" class="fpe" novalidate>' +
@@ -511,6 +514,7 @@ footer .brand span{color:var(--white)}
       abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><div class="ok"><div class="ok-i">✓</div><h3 class="m-tit">¡Pedido recibido!</h3>' +
         '<p>Tu código de pedido es <b>' + cod + "</b>. Ya separamos tus prendas.</p>" +
         (pago.detalle ? '<p class="m-desc">' + esc(pago.detalle) + "</p>" : "") +
+        (pago.qr ? '<p class="m-desc"><b>Total a pagar: ' + soles(total) + '</b></p><img class="qr qr-ok" src="' + esc(pago.qr) + '" alt="QR de ' + esc(pago.nombre) + '">' : "") +
         '<a class="btn btn-wa ancho" target="_blank" rel="noopener" href="' + wa(msg) + '"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg>Avisar por WhatsApp</a>' +
         '<p class="m-nota">Escríbenos para confirmar tu pedido' + (/yape|plin|transfer/i.test(form.pago) ? " y envíanos la captura del pago." : ".") + "</p></div>");
     } catch (e) {

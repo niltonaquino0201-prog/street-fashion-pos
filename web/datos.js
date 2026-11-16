@@ -26,9 +26,8 @@ const NEGOCIO = {
 //  MÉTODOS DE PAGO que el cliente elige al hacer su pedido en la web.
 // ------------------------------------------------------------
 const PAGOS_WEB = [
-  { nombre: "Yape / Plin", detalle: "Yapea o plinea al 943 369 367 y envíanos la captura por WhatsApp." },
-  { nombre: "Transferencia bancaria", detalle: "Te enviamos el número de cuenta por WhatsApp." },
-  { nombre: "Efectivo o tarjeta al recoger o recibir", detalle: "Pagas en la tienda o al recibir tu pedido." },
+  { nombre: "Yape", detalle: "Escanea el QR con tu app Yape, paga el total y envíanos la captura por WhatsApp.", qr: "img/pago/yape.jpg" },
+  { nombre: "Plin", detalle: "Escanea el QR desde la app de tu banco (Pago con QR), paga el total y envíanos la captura por WhatsApp.", qr: "img/pago/plin.jpg" },
 ];
 
 // ------------------------------------------------------------
