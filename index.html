@@ -157,6 +157,8 @@ td .sub{display:block;font-size:12px;color:var(--muted)}
 .prod:hover:not(:disabled){border-color:var(--accent)}
 .prod:disabled{opacity:.45;cursor:not-allowed}
 .prod .pn{font-weight:600;font-size:14px;line-height:1.25}
+.prod .pimg{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:var(--line);margin-bottom:4px}
+.pfoto{display:block;object-fit:cover;border-radius:6px;background:var(--line);flex:none}
 .prod .pv{font-size:12px;color:var(--muted)}
 .prod .pp{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:2px}
 .prod .pp b{font:600 14px var(--f-mono)}
@@ -386,7 +388,7 @@ const fHora=iso=>{const d=new Date(iso);return pad(d.getHours(),2)+":"+pad(d.get
 const uid=()=>Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
 
 const IGV=0.18;
-const CATS=["Polos","Camisas","Blusas","Pantalones","Jeans","Shorts","Faldas","Vestidos","Casacas","Polerones","Buzos","Zapatillas","Gorras","Accesorios","Otros"];
+const CATS=["Polos","Camisas","Blusas","Pantalones","Jeans","Shorts","Faldas","Vestidos","Casacas","Poleras","Polerones","Buzos","Zapatillas","Gorras","Accesorios","Otros"];
 const PUBLICOS=["Niños","Adolescentes","Jóvenes","Adultos","Todos"];
 const GENEROS=["Unisex","Hombre","Mujer"];
 const LINEAS=["Moda","Clásica"];
@@ -748,6 +750,11 @@ function stockPill(p){const s=Number(p.stock)||0,m=Number(p.stockMin)||0;
 const variante=p=>[p.talla&&("Talla "+p.talla),p.color].filter(Boolean).join(" · ");
 const exTag=o=>o&&o.ejemplo?'<span class="tag-ex">EJEMPLO</span>':"";
 function opts(list,sel){return list.map(x=>'<option'+(x===sel?" selected":"")+">"+esc(x)+"</option>").join("")}
+/* foto de la prenda: la subida en "Catálogo web" o la del catálogo de la página (web/img/productos) */
+const WEB_BASE="https://niltonaquino0201-prog.github.io/street-fashion-pos/web/";
+const fotoOk=f=>/^img\/productos\/[\w.-]+$/.test(String(f||""));
+function fotoProd(p){const k=gkey(p.nombre),up=S.webfotos&&S.webfotos[k];if(up)return up;if(!fotoOk(p.foto))return "";return (/^https?:$/.test(location.protocol)?"web/":WEB_BASE)+p.foto}
+const fotoMini=(p,sz)=>{const f=fotoProd(p);return f?'<img class="pfoto" src="'+esc(f)+'" alt="" loading="lazy" style="width:'+sz+'px;height:'+sz+'px" onerror="this.style.visibility=\'hidden\'">':'<span class="pfoto vacia" style="width:'+sz+'px;height:'+sz+'px"></span>'};
 
 /* ---------- periodos ---------- */
 function periodo(k){
@@ -812,7 +819,7 @@ function vPanel(){
 
 function vVender(){
   const q=ui.posQ.trim().toLowerCase();
-  const list=S.productos.filter(p=>!q||[p.codigo,p.barcode,p.nombre,p.categoria,p.color,p.talla].join(" ").toLowerCase().includes(q));
+  const list=S.productos.filter(p=>!q||[p.codigo,p.barcode,p.nombre,p.categoria,p.color,p.talla].join(" ").toLowerCase().includes(q)).sort((a,b)=>((Number(b.stock)||0)>0)-((Number(a.stock)||0)>0));
   const bruto=r2(ui.cart.reduce((a,c)=>{const p=prod(c.id);return a+(p?p.precio*c.cant:0)},0));
   const desc=Math.min(bruto,Math.max(0,r2(ui.descuento)));const total=r2(bruto-desc);const grav=r2(total/(1+IGV));const igv=r2(total-grav);
   const rec=r2(ui.recibido);const vuelto=ui.pago==="Efectivo"&&rec>0?r2(rec-total):null;
@@ -828,7 +835,7 @@ function vVender(){
       (S.mode==="nube"?'<label class="row muted" style="gap:8px;margin-top:8px;font-size:13px;cursor:pointer"><input type="checkbox" data-act="recibir" style="width:auto"'+(recibeEscaneos()?" checked":"")+'> Recibir aquí lo que escanean los celulares</label>':"")+
       (S.productos.length?"":'<p class="empty">Todavía no hay productos. Créalos en <button class="btn sm" data-act="go" data-v="inventario">Inventario</button></p>')+
       '<div class="prods">'+list.map(p=>{const inCart=(ui.cart.find(c=>c.id===p.id)||{}).cant||0;const left=(p.stock||0)-inCart;
-        return '<button class="prod" data-act="add" data-id="'+p.id+'"'+(left<=0?" disabled":"")+'><span class="pn">'+esc(p.nombre)+'</span><span class="pv">'+esc(variante(p)||p.categoria)+'</span><span class="pp"><b>'+money(p.precio)+"</b><span>"+(p.stock<=0?"agotado":left+" disp.")+"</span></span></button>"}).join("")+"</div></div>"+
+        const ft=fotoProd(p);return '<button class="prod" data-act="add" data-id="'+p.id+'"'+(left<=0?" disabled":"")+'>'+(ft?'<img class="pimg" src="'+esc(ft)+'" alt="" loading="lazy" onerror="this.remove()">':"")+'<span class="pn">'+esc(p.nombre)+'</span><span class="pv">'+esc(variante(p)||p.categoria)+'</span><span class="pp"><b>'+money(p.precio)+"</b><span>"+(p.stock<=0?"agotado":left+" disp.")+"</span></span></button>"}).join("")+"</div></div>"+
     '<div class="card cart"><div class="card-h" style="margin:0"><h2>Detalle de la venta</h2>'+(ui.cart.length?'<button class="btn sm" data-act="clear">Vaciar</button>':"")+"</div>"+
       (ui.cart.length?"<div>"+ui.cart.map(c=>{const p=prod(c.id);if(!p)return"";return '<div class="cl"><span><b>'+esc(p.nombre)+'</b><span class="sub muted" style="display:block;font-size:12px">'+esc(variante(p))+" · "+money(p.precio)+' c/u</span></span><span class="num" style="font-weight:600">'+money(p.precio*c.cant)+'</span><span class="q"><button data-act="qty" data-id="'+p.id+'" data-d="-1" aria-label="Quitar uno">−</button><span class="num">'+c.cant+'</span><button data-act="qty" data-id="'+p.id+'" data-d="1" aria-label="Agregar uno"'+(c.cant>=p.stock?" disabled":"")+'>+</button></span><button class="btn sm" style="justify-self:end;border:0;color:var(--muted)" data-act="qty" data-id="'+p.id+'" data-d="-999">Quitar</button></div>'}).join("")+"</div>":'<p class="empty">Toca un producto para agregarlo.</p>')+
       '<div class="seg" role="group" aria-label="Comprobante">'+tipos.map(([k,l])=>'<button data-act="tipo" data-k="'+k+'" aria-pressed="'+(ui.tipo===k)+'">'+l+"</button>").join("")+"</div>"+cli+
@@ -848,18 +855,22 @@ function vInventario(){
   const list=S.productos.filter(p=>(!ui.invCat||p.categoria===ui.invCat)&&(!q||[p.codigo,p.barcode,p.nombre,p.descripcion,p.categoria,p.color,p.talla,p.publico,p.genero].join(" ").toLowerCase().includes(q)));
   const und=S.productos.reduce((a,p)=>a+(Number(p.stock)||0),0),vc=S.productos.reduce((a,p)=>a+(p.stock||0)*(p.costo||0),0),vv=S.productos.reduce((a,p)=>a+(p.stock||0)*(p.precio||0),0);
   const cats=[...new Set(S.productos.map(p=>p.categoria).filter(Boolean))].sort();
-  return '<div class="head"><div><div class="eyebrow">Inventario</div><h1>Productos y stock</h1></div><div class="row">'+(S.productos.some(p=>!p.barcode)?'<button class="btn" data-act="gencod">Generar códigos faltantes</button>':"")+'<button class="btn" data-act="lblall">Etiquetas</button><button class="btn" data-act="csv">Exportar CSV</button><button class="btn pri" data-act="pnew">+ Nuevo producto</button></div></div>'+
+  return '<div class="head"><div><div class="eyebrow">Inventario</div><h1>Productos y stock</h1></div><div class="row">'+(S.productos.some(p=>!p.barcode)?'<button class="btn" data-act="gencod">Generar códigos faltantes</button>':"")+'<button class="btn" data-act="lblall">Etiquetas</button><button class="btn" data-act="csv">Exportar CSV</button>'+(S.empresa.catalogoCargado?"":'<button class="btn" data-act="impcat">Cargar catálogo de la web</button>')+'<button class="btn pri" data-act="pnew">+ Nuevo producto</button></div></div>'+
   '<div class="kpis"><div class="kpi k1"><span class="l">Productos (talla y color)</span><span class="v">'+S.productos.length+'</span></div><div class="kpi k4"><span class="l">Prendas en stock</span><span class="v">'+und+'</span></div><div class="kpi k3"><span class="l">Valor a costo</span><span class="v">'+money(vc)+'</span></div><div class="kpi k5"><span class="l">Valor a precio de venta</span><span class="v">'+money(vv)+"</span></div></div>"+
   '<div class="card"><div class="row" style="margin-bottom:12px"><input id="inv-q" class="grow" type="search" placeholder="Buscar producto" data-bind="invQ" data-rr value="'+esc(ui.invQ)+'" style="flex:1 1 220px"><select id="inv-cat" data-bind="invCat" data-rr style="flex:0 1 200px"><option value="">Todas las categorías</option>'+opts(cats,ui.invCat)+"</select></div>"+
-  (list.length?'<div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Público</th><th class="r">Costo</th><th class="r">Precio</th><th class="r">Margen</th><th>Stock</th><th></th></tr></thead><tbody>'+
-    list.map(p=>{const m=p.precio>0?((p.precio-(p.costo||0))/p.precio*100):0;return '<tr><td class="mono">'+esc(p.codigo)+'<span class="sub">'+esc(p.barcode||"sin código")+"</span></td><td><b>"+esc(p.nombre)+"</b>"+exTag(p)+'<span class="sub">'+esc(variante(p))+" · "+esc(p.linea||"")+"</span></td><td>"+esc(p.categoria)+"</td><td>"+esc(p.publico)+'<span class="sub">'+esc(p.genero)+'</span></td><td class="r num">'+money(p.costo)+'</td><td class="r num">'+money(p.precio)+'</td><td class="r num">'+m.toFixed(0)+"%</td><td>"+stockPill(p)+'</td><td class="r" style="white-space:nowrap"><button class="btn sm" data-act="lbl1" data-id="'+p.id+'">Etiquetas</button> <button class="btn sm" data-act="pedit" data-id="'+p.id+'">Editar</button></td></tr>'}).join("")+
+  (list.length?'<div class="tbl-wrap"><table><thead><tr><th>Código</th><th></th><th>Producto</th><th>Categoría</th><th>Público</th><th class="r">Costo</th><th class="r">Precio</th><th class="r">Margen</th><th>Stock</th><th></th></tr></thead><tbody>'+
+    list.map(p=>{const m=p.precio>0?((p.precio-(p.costo||0))/p.precio*100):0;return '<tr><td class="mono">'+esc(p.codigo)+'<span class="sub">'+esc(p.barcode||"sin código")+"</span></td><td>"+fotoMini(p,44)+"</td><td><b>"+esc(p.nombre)+"</b>"+exTag(p)+'<span class="sub">'+esc(variante(p))+" · "+esc(p.linea||"")+"</span></td><td>"+esc(p.categoria)+"</td><td>"+esc(p.publico)+'<span class="sub">'+esc(p.genero)+'</span></td><td class="r num">'+money(p.costo)+'</td><td class="r num">'+money(p.precio)+'</td><td class="r num">'+m.toFixed(0)+"%</td><td>"+stockPill(p)+'</td><td class="r" style="white-space:nowrap"><button class="btn sm" data-act="lbl1" data-id="'+p.id+'">Etiquetas</button> <button class="btn sm" data-act="pedit" data-id="'+p.id+'">Editar</button></td></tr>'}).join("")+
   "</tbody></table></div>":'<p class="empty">'+(S.productos.length?"Ningún producto coincide con la búsqueda.":"Aún no hay productos. Crea el primero con “Nuevo producto”: cada combinación de talla y color es un producto con su propio stock.")+"</p>")+"</div>";
 }
-function productForm(p,compra){
+function productForm(p,compra,pre){
   const n=!p;p=p||{categoria:"Polos",linea:"Moda",publico:"Jóvenes",genero:"Unisex",stock:0,stockMin:3};
+  if(n&&pre){const {nombre,descripcion,categoria,linea,publico,genero,costo,precio,stockMin,foto}=pre;p={...p,nombre,descripcion,categoria,linea,publico,genero,costo,precio,stockMin,foto}}
+  const ft=fotoProd(p);
   return '<div class="sheet-h"><h2>'+(n?(compra?"Nuevo producto para esta compra":"Nuevo producto"):"Editar "+esc(p.codigo))+'</h2><button class="x" data-act="close" aria-label="Cerrar">×</button></div>'+
+  (ft?'<div class="row" style="gap:12px;margin-bottom:4px"><img class="pfoto" src="'+esc(ft)+'" alt="" style="width:72px;height:72px" onerror="this.remove()"><span class="muted" style="font-size:13px">Foto de la prenda (la puedes cambiar en Pedidos web → Catálogo web).</span></div>':"")+
+  (!n&&!p.talla&&!p.color?'<p class="note" style="margin:0">Pon aquí <b>una</b> talla, un color y su stock. Para las demás tallas o colores, guarda y luego usa <b>+ Otra talla o color</b>.</p>':"")+
   (n?'<p class="note" style="margin:0">Para crear varias tallas o colores de una vez, sepáralos con comas. Ejemplo: tallas <b>S, M, L</b> y colores <b>Negro, Blanco</b> crean 6 productos, cada uno con su código de barras.</p>':"")+
-  '<form data-form="producto" data-id="'+(n?"":p.id)+'"'+(compra?' data-compra="1"':"")+' class="fields">'+
+  '<form data-form="producto" data-id="'+(n?"":p.id)+'"'+(compra?' data-compra="1"':"")+' class="fields">'+(fotoOk(p.foto)?'<input type="hidden" name="foto" value="'+esc(p.foto)+'">':"")+
     '<label class="f span2">Nombre del producto<input name="nombre" id="pf-nom" required value="'+esc(p.nombre)+'" placeholder="Polo oversize básico"></label>'+
     '<label class="f span2">Descripción (opcional)<input name="descripcion" id="pf-des" value="'+esc(p.descripcion||"")+'" placeholder="Algodón 100 %, corte oversize, cuello redondo"></label>'+
     '<label class="f">Categoría<select name="categoria" id="pf-cat">'+opts(CATS,p.categoria)+"</select></label>"+
@@ -875,7 +886,7 @@ function productForm(p,compra){
     (compra?'<label class="f">Cantidad comprada (de cada talla y color)<input name="cantCompra" id="pf-cc" type="number" min="1" step="1" value="1"></label>':'<label class="f">'+(n?"Stock inicial (de cada talla y color)":"Stock actual")+'<input name="stock" id="pf-sto" type="number" min="0" step="1" value="'+esc(p.stock)+'"></label>')+
     '<label class="f">Stock mínimo (aviso de reposición)<input name="stockMin" id="pf-min" type="number" min="0" step="1" value="'+esc(p.stockMin)+'"></label>'+
     '<p class="err span2" id="pf-err" style="margin:0"></p>'+
-    '<div class="row span2" style="justify-content:space-between">'+(n?"<span></span>":'<button type="button" class="btn danger" data-act="pdel" data-id="'+p.id+'">Eliminar</button>')+'<div class="row"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div></div>'+
+    '<div class="row span2" style="justify-content:space-between">'+(n?"<span></span>":'<span class="row"><button type="button" class="btn danger" data-act="pdel" data-id="'+p.id+'">Eliminar</button><button type="button" class="btn" data-act="potra" data-id="'+p.id+'">+ Otra talla o color</button></span>')+'<div class="row"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div></div>'+
   "</form>";
 }
 
@@ -1378,6 +1389,8 @@ const ACT={
   cobrar:()=>cobrar(),
   pnew:()=>openModal(productForm(null)),
   pedit:d=>openModal(productForm(prod(d.id))),
+  potra:d=>{const p=prod(d.id);if(p)openModal(productForm(null,false,p))},
+  impcat:(d,b)=>importarCatalogo(b),
   pdel:async(d,b)=>{if(!armed(b))return;await store.del("productos",d.id);closeModal();toast("Producto eliminado")},
   close:()=>closeModal(),
   cnewp:()=>openModal(productForm(null,true)),
@@ -1482,7 +1495,7 @@ function escucharWeb(){
 }
 function programarSyncWeb(){clearTimeout(webSync.t);webSync.t=setTimeout(syncWeb,1500)}
 function webPub(p){return {grupo:gkey(p.nombre),nombre:String(p.nombre||""),descripcion:String(p.descripcion||""),categoria:String(p.categoria||""),genero:String(p.genero||""),publico:String(p.publico||""),
-  talla:String(p.talla||""),color:String(p.color||""),precio:r2(p.precio),stock:Math.max(0,Math.round(Number(p.stock)||0))}}
+  talla:String(p.talla||""),color:String(p.color||""),precio:r2(p.precio),stock:Math.max(0,Math.round(Number(p.stock)||0)),foto:fotoOk(p.foto)?p.foto:""}}
 async function syncWeb(){
   if(S.mode!=="nube"||!fsRaw||!webSync.prod||!webSync.cat)return;
   const want={},have={},ops=[];
@@ -1570,6 +1583,33 @@ function pedCard(p){
       '<button class="btn pri" data-act="pedcobrar" data-id="'+p.id+'">Cobrar en caja</button></div>':"")+
   "</div>";
 }
+/* al cambiar el nombre, la foto subida en "Catálogo web" pasa al nombre nuevo */
+async function moverFotoWeb(de,a){if(S.mode!=="nube"||!fsRaw||de===a)return;
+  try{const o=await fsRaw.collection("web_fotos").doc(de).get();if(!o.exists)return;const n=await fsRaw.collection("web_fotos").doc(a).get();if(n.exists)return;
+    await fsRaw.collection("web_fotos").doc(a).set(o.data());if(S.webfotos&&S.webfotos[de])S.webfotos={...S.webfotos,[a]:S.webfotos[de]}}catch(e){console.warn("foto",e&&e.code)}}
+/* crea en el inventario las prendas del catálogo de la página web (web/datos.js), con foto y precio, sin stock */
+const CAT_WEB={"polos hombre":["Polos","Hombre"],"poleras hombre":["Poleras","Hombre"],"jeans hombre":["Jeans","Hombre"],"polos dama":["Polos","Mujer"],"poleras dama":["Poleras","Mujer"],"jeans dama":["Jeans","Mujer"],"tops dama":["Blusas","Mujer"]};
+async function importarCatalogo(b){
+  let lista;
+  try{const r=await fetch((/^https?:$/.test(location.protocol)?"web/":WEB_BASE)+"datos.js",{cache:"no-store"});if(!r.ok)throw 0;
+    lista=new Function(await r.text()+";return PRODUCTOS")()}catch(e){toast("No se pudo leer el catálogo. Revisa tu conexión a internet.");return}
+  const ya=new Set(S.productos.map(p=>gkey(p.nombre)));
+  const nuevos=(Array.isArray(lista)?lista:[]).filter(x=>{if(!x||!x.nombre||ya.has(gkey(x.nombre)))return false;ya.add(gkey(x.nombre));return true});
+  if(!nuevos.length){toast("Todas las prendas del catálogo ya están en el inventario");try{await store.set("config","empresa",{...S.empresa,catalogoCargado:true})}catch(e){}return}
+  if(!b.dataset.ok){b.dataset.ok="1";b.textContent="Confirmar: crear "+nuevos.length+" prendas";setTimeout(()=>{if(b.isConnected){delete b.dataset.ok;b.textContent="Cargar catálogo de la web"}},6000);return}
+  b.disabled=true;
+  let mx=S.productos.reduce((a,p)=>{const m=/^SF-(\d+)$/.exec(p.codigo||"");return m?Math.max(a,Number(m[1])):a},0);
+  const hechos=[],ahora=new Date().toISOString();let n=0;
+  for(const x of nuevos){
+    const [cat,gen]=CAT_WEB[String(x.categoria||"").trim().toLowerCase()]||[CATS.includes(x.categoria)?x.categoria:"Otros","Unisex"];
+    const bc=nextBarcode(hechos);hechos.push({barcode:bc});
+    const data={nombre:String(x.nombre).trim(),descripcion:String(x.detalle||"").trim(),categoria:cat,linea:"Moda",publico:"Jóvenes",genero:gen,costo:0,precio:r2(x.precio)||0,stockMin:3,
+      codigo:"SF-"+pad(++mx,4),talla:"",color:"",barcode:bc,stock:0,creado:ahora,actualizado:ahora,...(fotoOk("img/productos/"+x.foto)?{foto:"img/productos/"+x.foto}:{})};
+    try{await store.set("productos",uid(),data);n++;b.textContent="Cargando… "+n+" de "+nuevos.length}catch(e){toast("Se cargaron "+n+". Falló una prenda ("+(e&&e.code)+"). Vuelve a intentar.");b.disabled=false;return}
+  }
+  try{await store.set("config","empresa",{...S.empresa,catalogoCargado:true})}catch(e){}
+  toast(n+" prendas cargadas. Ahora edita cada una para poner talla, color, costo y stock.");render();
+}
 function gruposWeb(){
   const g={};S.productos.filter(p=>!p.ejemplo).forEach(p=>{const k=gkey(p.nombre);(g[k]=g[k]||{k,nombre:p.nombre,vars:[]}).vars.push(p)});
   return Object.values(g).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
@@ -1581,7 +1621,7 @@ function vCatalogoWeb(){
     '<p class="muted" style="margin-top:0">Cada producto se muestra una vez con sus tallas y colores. En la web solo aparecen las tallas y colores con stock. La foto se sube una vez para todas las variantes.</p>'+
     (gs.length?'<div class="tbl-wrap"><table><thead><tr><th>Foto</th><th>Producto</th><th class="r">Precio</th><th class="r">Stock</th><th>En la web</th><th></th></tr></thead><tbody>'+gs.map(x=>{
       const vis=x.vars.some(p=>p.web!==false),st=x.vars.reduce((a,p)=>a+(Number(p.stock)||0),0),pr=x.vars.map(p=>Number(p.precio)||0),f=fotos[x.k];
-      return '<tr><td>'+(f?'<img src="'+esc(f)+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">':'<span class="muted" style="font-size:12px">'+(S.webfotos?"Sin foto":"…")+"</span>")+'</td><td><b>'+esc(x.nombre)+'</b><span class="sub">'+x.vars.length+" variante"+(x.vars.length===1?"":"s")+" · "+esc([...new Set(x.vars.map(p=>p.talla).filter(Boolean))].join(", "))+'</span></td><td class="r num">'+money(Math.min(...pr))+(Math.max(...pr)>Math.min(...pr)?" – "+money(Math.max(...pr)):"")+'</td><td class="r num">'+st+"</td>"+
+      const fc=f||fotoProd(x.vars.find(p=>fotoOk(p.foto))||x.vars[0]);return '<tr><td>'+(fc?'<img src="'+esc(fc)+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">':'<span class="muted" style="font-size:12px">'+(S.webfotos?"Sin foto":"…")+"</span>")+'</td><td><b>'+esc(x.nombre)+'</b><span class="sub">'+x.vars.length+" variante"+(x.vars.length===1?"":"s")+" · "+esc([...new Set(x.vars.map(p=>p.talla).filter(Boolean))].join(", "))+'</span></td><td class="r num">'+money(Math.min(...pr))+(Math.max(...pr)>Math.min(...pr)?" – "+money(Math.max(...pr)):"")+'</td><td class="r num">'+st+"</td>"+
         '<td><label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" style="width:auto" data-act="webvis" data-k="'+x.k+'"'+(vis?" checked":"")+"> "+(vis?"Visible":"Oculto")+"</label></td>"+
         '<td class="r" style="white-space:nowrap"><label class="btn sm" style="cursor:pointer">'+(f?"Cambiar foto":"Subir foto")+'<input type="file" accept="image/*" data-fotog="'+x.k+'" data-nom="'+esc(x.nombre)+'" hidden></label>'+(f?' <button class="btn sm" data-act="webfotodel" data-k="'+x.k+'">Quitar</button>':"")+"</td></tr>"}).join("")+"</tbody></table></div>":'<p class="empty">Aún no hay productos en el inventario.</p>')+"</div>";
 }
@@ -1648,13 +1688,13 @@ document.addEventListener("submit",async e=>{e.preventDefault();const f=e.target
     const err=f.querySelector("#pf-err");const nombre=(fd.nombre||"").trim(),precio=r2(fd.precio),enCompra=f.dataset.compra==="1";
     if(!nombre){err.textContent="Escribe el nombre del producto.";return}if(!(precio>0)){err.textContent="El precio de venta debe ser mayor a cero.";return}
     const old=f.dataset.id?prod(f.dataset.id):null;
-    const base={nombre,descripcion:(fd.descripcion||"").trim(),categoria:fd.categoria,linea:fd.linea,publico:fd.publico,genero:fd.genero,costo:r2(fd.costo),precio,stockMin:Math.max(0,Math.round(Number(fd.stockMin)||0)),actualizado:new Date().toISOString()};
+    const base={nombre,descripcion:(fd.descripcion||"").trim(),categoria:fd.categoria,linea:fd.linea,publico:fd.publico,genero:fd.genero,costo:r2(fd.costo),precio,stockMin:Math.max(0,Math.round(Number(fd.stockMin)||0)),actualizado:new Date().toISOString(),...(fotoOk(fd.foto)?{foto:fd.foto}:{})};
     const bcIn=String(fd.barcode||"").split("|")[0].trim();
     if(bcIn&&!/^[0-9A-Za-z\-.]{4,40}$/.test(bcIn)){err.textContent="El código de barras solo puede tener letras y números.";return}
     if(old){
       const bc=bcIn||old.barcode||nextBarcode();const dup=S.productos.find(p=>p.id!==old.id&&String(p.barcode||"")===bc);if(dup){err.textContent="Ese código de barras ya es de "+dup.nombre+" ("+dup.codigo+").";return}
       const data={...strip(old),...base,talla:(fd.talla||"").trim(),color:(fd.color||"").trim(),stock:Math.max(0,Math.round(Number(fd.stock)||0)),barcode:bc};
-      try{await store.set("productos",old.id,data);closeModal();toast("Producto actualizado")}catch(x){err.textContent="No se pudo guardar ("+(x&&x.code)+")."}
+      try{await store.set("productos",old.id,data);closeModal();toast("Producto actualizado");if(gkey(old.nombre)!==gkey(nombre))moverFotoWeb(gkey(old.nombre),gkey(nombre))}catch(x){err.textContent="No se pudo guardar ("+(x&&x.code)+")."}
       return}
     const list=t=>{const a=String(t||"").split(",").map(x=>x.trim()).filter(Boolean);return a.length?[...new Set(a)]:[""]};
     const tallas=list(fd.talla),colores=list(fd.color),combos=[];tallas.forEach(t=>colores.forEach(c=>combos.push([t,c])));
