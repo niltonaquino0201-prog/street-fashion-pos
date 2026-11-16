@@ -373,6 +373,7 @@ body.is-login main#app{max-width:none;padding:0;margin:0;display:block}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="bot/cerebro.js"></script>
 <script>
 (function(){
 "use strict";
@@ -981,6 +982,7 @@ function render(){
   if(S.mode==="login"){if(!$(".portada")){$("#app").innerHTML=loginHTML();portadaRotar()}else{const e=$("#lg-err");if(e)e.textContent=nubeMsg}return}
   const a=document.activeElement,fid=a&&a.id&&$("#app").contains(a)?a.id:null;let ss=null,se=null;try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}
   $("#app").innerHTML=VIEWFN[view]();
+  if(view==="pedidos"&&ui.pedTab==="bot")botScroll();
   if(fid){const el=document.getElementById(fid);if(el){refocando=true;el.focus();refocando=false;let ok=false;try{if(ss!==null){el.setSelectionRange(ss,se);ok=true}}catch(e){}
     if(!ok&&"value" in el&&el.tagName==="INPUT"){const v=el.value;el.value="";el.value=v}}}
 }
@@ -1553,11 +1555,11 @@ async function pedidoVendido(pid,v,vid){try{await fsRaw.collection("pedidos").do
 
 function vPedidos(){
   if(S.mode!=="nube")return '<div class="head"><div><div class="eyebrow">Página web</div><h1>Pedidos web</h1></div></div><div class="card"><p class="muted" style="margin:0">Los pedidos de la página web solo llegan al sistema en la nube. Entra desde la versión en internet.</p></div>';
-  const tabs=[["pedidos","Pedidos"],["catalogo","Catálogo web"]];
+  const tabs=[["pedidos","Pedidos"],["catalogo","Catálogo web"],["bot","Chatbot"]];
   return '<div class="head"><div><div class="eyebrow">Página web</div><h1>Pedidos web</h1><p>Los clientes solo pueden pedir lo que hay en stock. Al llegar un pedido el sistema aparta las prendas.</p></div>'+
     (S.empresa.webUrl?'<a class="btn" href="'+esc(S.empresa.webUrl)+'" target="_blank" rel="noopener">Ver la página web</a>':"")+"</div>"+
     '<div class="seg" role="group" aria-label="Sección" style="margin-bottom:14px">'+tabs.map(([k,l])=>'<button data-act="pedtab" data-k="'+k+'" aria-pressed="'+((ui.pedTab||"pedidos")===k)+'">'+l+"</button>").join("")+"</div>"+
-    ((ui.pedTab||"pedidos")==="catalogo"?vCatalogoWeb():vListaPedidos());
+    ((ui.pedTab||"pedidos")==="catalogo"?vCatalogoWeb():ui.pedTab==="bot"?vBot():vListaPedidos());
 }
 function vListaPedidos(){
   const hoy=ymd(new Date()),ps=S.pedidos||[],f=ui.pedFil||"abiertos";
@@ -1649,6 +1651,68 @@ Object.assign(ACT,{
     try{await bt.commit();toast(vis?"Se muestra en la web":"Oculto en la web")}catch(e){toast("No se pudo cambiar ("+(e&&e.code)+")");render()}},
   webfotodel:async(d,b)=>{if(!armed(b))return;try{await fsRaw.collection("web_fotos").doc(d.k).delete();const f={...(S.webfotos||{})};delete f[d.k];S.webfotos=f;render()}catch(e){toast("No se pudo quitar ("+(e&&e.code)+")")}}
 });
+
+/* ---------- chatbot de WhatsApp: simulador ----------
+   Usa el mismo cerebro (bot/cerebro.js) que el conector de WhatsApp, con el stock real del inventario.
+   La clave de Gemini se guarda solo en este equipo. En modo prueba no se crean pedidos de verdad. */
+const BOT_PREF="sf-bot";
+function botCfgLocal(){try{return JSON.parse(localStorage.getItem(BOT_PREF)||"{}")||{}}catch(e){return {}}}
+function botGuardar(c){try{localStorage.setItem(BOT_PREF,JSON.stringify(c))}catch(e){}}
+function botCatalogo(){
+  const docs=S.productos.filter(p=>p.web!==false&&!p.ejemplo).map(p=>({id:p.id,...webPub(p)}));
+  const cat=window.CerebroBot?CerebroBot.armarCatalogo(docs,{}):[],f=S.webfotos||{};
+  cat.forEach(g=>{if(f[g.grupo])g.foto=f[g.grupo]});return cat;
+}
+function botNegocio(){const e=S.empresa||{};return {nombre:"STREET FASHIÓN",...(e.direccion?{direccion:e.direccion}:{})}}
+function vBot(){
+  const c=botCfgLocal(),b=ui.bot||(ui.bot={chat:[],estado:{},txt:"",ocupado:false});
+  const cat=botCatalogo(),conStock=cat.filter(g=>g.stock>0).length;
+  const burb=m=>'<div style="display:flex;justify-content:'+(m.yo?"flex-end":"flex-start")+';margin:6px 0"><div style="max-width:78%;padding:8px 11px;border-radius:12px;white-space:pre-wrap;line-height:1.35;'+
+    (m.yo?"background:#d9fdd3;color:#111;border-bottom-right-radius:3px":m.sis?"background:var(--warn-soft);color:var(--ink);font-size:13px":"background:var(--surface);color:var(--ink);border:1px solid var(--line);border-bottom-left-radius:3px")+'">'+
+    (m.foto?'<img src="'+esc(m.foto)+'" alt="" style="display:block;max-width:220px;width:100%;border-radius:8px;margin-bottom:6px">':"")+
+    esc(m.texto||"").replace(/\*([^*\n]+)\*/g,"<b>$1</b>")+"</div></div>";
+  return '<div class="card" style="margin-bottom:14px"><div class="card-h"><h2>Simulador del chatbot</h2><span class="muted">'+conStock+" modelos con stock</span></div>"+
+    '<p class="muted" style="margin-top:0">Escribe como si fueras un cliente. El bot responde con el stock real de tu inventario. Así lo pruebas antes de conectarlo a WhatsApp.</p>'+
+    '<div class="row" style="gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">'+
+      '<label style="min-width:200px">Cómo responde<select data-botcfg="modo"><option value="menu"'+(c.modo!=="ia"?" selected":"")+'>Menú con números (gratis, sin IA)</option><option value="ia"'+(c.modo==="ia"?" selected":"")+'>Conversación con IA (Gemini gratis)</option></select></label>'+
+      (c.modo==="ia"?'<label style="min-width:240px;flex:1">Clave de Gemini <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="font-weight:400">(sacar clave gratis)</a><input type="password" autocomplete="off" data-botcfg="clave" value="'+esc(c.clave||"")+'" placeholder="Pega aquí tu clave"></label>'+
+        '<label style="min-width:160px">Modelo<input data-botcfg="modelo" value="'+esc(c.modelo||"gemini-2.5-flash")+'"></label>':"")+
+      '<label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;white-space:nowrap"><input type="checkbox" style="width:auto" data-botcfg="real"'+(c.real?" checked":"")+'> Crear pedidos de verdad (aparta stock)</label>'+
+    "</div>"+
+    (c.modo==="ia"&&!c.clave?'<p class="err" style="margin:0 0 10px">Sin clave responde el modo menú. La clave se guarda solo en este equipo.</p>':"")+
+    '<div id="bot-chat" style="background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;height:420px;overflow-y:auto">'+
+      (b.chat.length?b.chat.map(burb).join(""):'<p class="empty" style="margin-top:150px">Escribe “hola” o, por ejemplo, “tienes polera negra talla M?”</p>')+
+      (b.ocupado?'<p class="muted" style="margin:6px 0">Escribiendo…</p>':"")+"</div>"+
+    '<div class="row" style="gap:8px;margin-top:10px"><input id="bot-txt" placeholder="Escribe un mensaje como cliente…" value="'+esc(b.txt)+'" style="flex:1" autocomplete="off">'+
+      '<button class="btn pri" data-act="botenviar"'+(b.ocupado?" disabled":"")+'>Enviar</button><button class="btn" data-act="botreset">Reiniciar</button></div></div>'+
+    '<div class="card"><div class="card-h"><h2>Cómo funciona en WhatsApp</h2></div><ul class="muted" style="margin:0;padding-left:18px;line-height:1.6">'+
+      "<li>El bot solo ofrece tallas y colores con stock. Si algo está agotado, ofrece modelos parecidos.</li>"+
+      "<li>Cuando el cliente confirma, el pedido llega a la pestaña <b>Pedidos</b> con la nota “Pedido por WhatsApp (chatbot)” y se aparta el stock (con el sistema abierto, igual que la web).</li>"+
+      "<li>Si el cliente pide hablar con una persona (reclamos, descuentos, cambios), el bot le pasa tu WhatsApp personal 943 369 367 para que lo atiendas tú.</li>"+
+      "<li>Si la IA gratis llega a su tope del día, el bot sigue atendiendo con el menú de números.</li></ul></div>";
+}
+async function botEnviar(){
+  const b=ui.bot,txt=String(b&&b.txt||"").trim();if(!txt||b.ocupado||!window.CerebroBot)return;
+  const c=botCfgLocal();b.txt="";b.chat.push({yo:true,texto:txt});b.ocupado=true;render();botScroll();
+  const crearPedido=async doc=>{
+    if(!c.real)return "W-PRUEBA";
+    if(S.mode!=="nube"||!fsRaw)throw new Error("sin nube");
+    const ref=fsRaw.collection("pedidos").doc();await ref.set({...doc,fecha:firebase.firestore.FieldValue.serverTimestamp()});return "W-"+ref.id.slice(-6).toUpperCase()};
+  try{
+    const r=await CerebroBot.responder({modo:c.modo==="ia"?"ia":"menu",ia:{clave:c.clave||"",modelo:c.modelo||"gemini-2.5-flash"},negocio:botNegocio(),crearPedido},b.estado,txt,{catalogo:botCatalogo(),telefono:c.tel||"51900000000"});
+    b.estado=r.estado;r.respuestas.forEach(m=>b.chat.push({texto:m.texto,foto:m.foto}));
+    if(r.aviso)b.chat.push({sis:true,texto:"Aviso (solo lo ves tú): "+r.aviso});
+    if(r.callado)b.chat.push({sis:true,texto:"El bot está en pausa en este chat porque pasó la conversación a una persona. Toca Reiniciar para probar de nuevo."});
+    else if(r.humano)b.chat.push({sis:true,texto:"El bot derivó al cliente a tu WhatsApp personal. Motivo: "+r.humano.motivo});
+    if(!c.real&&r.respuestas.some(m=>/W-PRUEBA/.test(m.texto||"")))b.chat.push({sis:true,texto:"Pedido de prueba: no se guardó ni apartó stock. Marca “Crear pedidos de verdad” para probar todo el recorrido."});
+  }catch(e){b.chat.push({sis:true,texto:"Error del bot: "+(e&&e.message||e)})}
+  b.ocupado=false;render();botScroll();const i=document.getElementById("bot-txt");if(i)i.focus();
+}
+function botScroll(){const el=document.getElementById("bot-chat");if(el)el.scrollTop=el.scrollHeight}
+document.addEventListener("input",e=>{const el=e.target;if(el.id==="bot-txt"&&ui.bot)ui.bot.txt=el.value});
+document.addEventListener("keydown",e=>{if(e.target.id==="bot-txt"&&e.key==="Enter"){e.preventDefault();e.stopPropagation();botEnviar()}},true);
+document.addEventListener("change",e=>{const el=e.target,k=el.dataset&&el.dataset.botcfg;if(!k)return;const c=botCfgLocal();c[k]=el.type==="checkbox"?el.checked:el.value.trim();botGuardar(c);render();botScroll()});
+Object.assign(ACT,{botenviar:()=>botEnviar(),botreset:()=>{ui.bot={chat:[],estado:{},txt:"",ocupado:false};render()}});
 
 document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled)return;if(b.tagName==="SELECT")return;const fn=ACT[b.dataset.act];if(fn){if(b.type!=="checkbox")e.preventDefault();fn(b.dataset,b,e)}});
 $("#modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});

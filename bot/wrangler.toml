@@ -1,0 +1,19 @@
+# Configuración del conector de WhatsApp en Cloudflare Workers (plan gratis).
+# Las claves (WA_TOKEN, WA_VERIFY, WA_APP_SECRET, GEMINI_KEY) NO van aquí:
+# se cargan con "npx wrangler secret put NOMBRE".
+name = "street-fashion-bot"
+main = "whatsapp-worker.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+FIREBASE_PROJECT = "street-fashion-pos"
+FIREBASE_API_KEY = "AIzaSyAfeSOUxCtXVuaCfCTL1n2Bb6WapVzL_uQ"   # pública, la misma de la web
+WA_PHONE_ID = ""                    # se completa al crear el número en Meta
+GEMINI_MODELO = "gemini-2.5-flash"
+WHATSAPP_HUMANO = "51943369367"     # a dónde se deriva cuando piden hablar con una persona
+
+# Guarda el estado de cada conversación. El id se obtiene con:
+#   npx wrangler kv namespace create CHATS
+[[kv_namespaces]]
+binding = "CHATS"
+id = "PEGAR_AQUI_EL_ID"
