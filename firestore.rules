@@ -21,6 +21,37 @@ service cloud.firestore {
       allow read: if trabajador();
       allow write: if trabajador() && id == "correlativos";
     }
+    // Página web: cualquiera ve el catálogo (sin costos) y las fotos; solo el sistema los escribe.
+    match /web_catalogo/{id} {
+      allow read: if true;
+      allow write: if trabajador();
+    }
+    match /web_fotos/{id} {
+      allow read: if true;
+      allow write: if trabajador();
+    }
+    // Página web: cualquiera puede enviar un pedido nuevo, pero no leer ni cambiar pedidos.
+    match /pedidos/{id} {
+      allow create: if pedidoValido(request.resource.data);
+      allow read, update: if trabajador();
+    }
+    function texto(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+    function pedidoValido(d) {
+      return d.keys().hasAll(['fecha', 'cliente', 'telefono', 'entrega', 'pago', 'items', 'total', 'estado'])
+        && d.keys().hasOnly(['fecha', 'cliente', 'telefono', 'entrega', 'direccion', 'pago', 'nota', 'items', 'total', 'estado'])
+        && d.fecha == request.time
+        && d.estado == 'nuevo'
+        && texto(d.cliente, 2, 80)
+        && texto(d.telefono, 6, 20)
+        && d.entrega in ['tienda', 'delivery']
+        && (!('direccion' in d) || texto(d.direccion, 0, 200))
+        && texto(d.pago, 2, 40)
+        && (!('nota' in d) || texto(d.nota, 0, 300))
+        && d.items is list && d.items.size() >= 1 && d.items.size() <= 20
+        && d.total is number && d.total >= 0;
+    }
     match /usuarios/{email} {
       allow read: if request.auth != null && request.auth.token.email == email;
     }

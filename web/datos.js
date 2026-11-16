@@ -11,7 +11,8 @@ const NEGOCIO = {
   telefonoVisible: "943 369 367",
   email: "niltonaquino0201@gmail.com",
   direccion: "Villa Casagrande, La Arena, Piura",
-  horario: "",                      // ej: "Lunes a sábado de 10:00 a. m. a 9:00 p. m."
+  horario: "",
+  delivery: "Delivery en Piura: coordinamos el costo del envío por WhatsApp.",                      // ej: "Lunes a sábado de 10:00 a. m. a 9:00 p. m."
 
   // Pega aquí el link de cada red. Si queda vacío "", no se muestra.
   facebook: "",
@@ -20,7 +21,19 @@ const NEGOCIO = {
 };
 
 // ------------------------------------------------------------
-//  CATÁLOGO
+//  MÉTODOS DE PAGO que el cliente elige al hacer su pedido en la web.
+// ------------------------------------------------------------
+const PAGOS_WEB = [
+  { nombre: "Yape / Plin", detalle: "Yapea o plinea al 943 369 367 y envíanos la captura por WhatsApp." },
+  { nombre: "Transferencia bancaria", detalle: "Te enviamos el número de cuenta por WhatsApp." },
+  { nombre: "Efectivo o tarjeta al recoger o recibir", detalle: "Pagas en la tienda o al recibir tu pedido." },
+];
+
+// ------------------------------------------------------------
+//  CATÁLOGO DE RESPALDO
+//  Mientras el sistema de ventas no tenga productos con stock, la web muestra esta lista
+//  y los pedidos van por WhatsApp. Cuando el sistema tenga productos, se usan esos
+//  (con su stock real) y estas fotos se toman si el nombre del producto es el mismo.
 //  foto: nombre del archivo subido a la carpeta img/productos
 //        (ej: "polo-negro.jpg"). Si queda vacío "", se muestra
 //        un espacio gris con el logo.
