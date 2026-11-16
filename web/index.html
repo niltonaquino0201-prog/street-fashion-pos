@@ -40,7 +40,9 @@ nav a:hover{opacity:1}
 @media (max-width:720px){nav{display:none}}
 
 /* Portada */
-.hero{background:linear-gradient(90deg,rgba(14,14,14,.96) 0%,rgba(14,14,14,.86) 38%,rgba(14,14,14,.35) 70%,rgba(14,14,14,.2) 100%),linear-gradient(0deg,rgba(14,14,14,.7),transparent 35%),url(img/portada/fondo.jpg) right center/cover no-repeat,var(--ink);color:var(--white);overflow:hidden;position:relative}
+.hero{background:var(--ink);color:var(--white);overflow:hidden;position:relative}
+.hero-foto{position:absolute;top:0;right:0;bottom:0;width:58%;background:url(img/portada/fondo.jpg) center top/cover no-repeat;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 28%);mask-image:linear-gradient(90deg,transparent 0%,#000 28%)}
+.hero .wrap{position:relative;z-index:1}
 .hero .wrap{display:flex;align-items:center;min-height:min(78vh,700px);padding-top:84px;padding-bottom:96px}
 .hero .wrap>div{max-width:640px}
 .kicker{font-size:13px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#bdb8ae}
@@ -54,7 +56,7 @@ nav a:hover{opacity:1}
 .btn-line{border-color:var(--white);color:var(--white)}
 .btn svg{width:20px;height:20px;flex:none}
 @media (max-width:820px){
-  .hero{background:linear-gradient(0deg,rgba(14,14,14,.95) 0%,rgba(14,14,14,.82) 50%,rgba(14,14,14,.6) 100%),url(img/portada/fondo.jpg) center/cover no-repeat,var(--ink)}
+  .hero-foto{width:100%;opacity:.4;-webkit-mask-image:linear-gradient(0deg,transparent 15%,#000 75%);mask-image:linear-gradient(0deg,transparent 15%,#000 75%)}
   .hero .wrap{min-height:0;padding-top:120px;padding-bottom:64px;text-align:center}
   .hero .wrap>div{margin:0 auto}
   .hero p{margin:0 auto}
@@ -206,6 +208,7 @@ footer .brand span{color:var(--white)}
 
 <main id="inicio">
   <div class="hero">
+    <div class="hero-foto" role="img" aria-label="Hombre y mujer con polo y jean de STREET FASHIÓN"></div>
     <div class="wrap">
       <div>
         <div class="kicker">Tienda de ropa · La Arena, Piura</div>
