@@ -41,10 +41,9 @@ nav a:hover{opacity:1}
 
 /* Portada */
 .hero{background:var(--ink);color:var(--white);overflow:hidden;position:relative}
-.hero-fotos{position:absolute;inset:0;overflow:hidden;background:#8d8a84}
+.hero-fotos{position:absolute;inset:0;overflow:hidden;background:var(--ink)}
 .hero-fotos img{position:absolute;display:block}
-.hero-fotos .fondo{inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(30px) brightness(.55) saturate(1.1)}
-.hero-fotos .modelos{left:50%;top:0;height:100%;width:auto;max-width:none;transform:translateX(-50%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);animation:entra 1.1s ease-out both}
+.hero-fotos .modelos{left:50%;top:0;height:100%;width:auto;max-width:none;transform:translateX(-50%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);animation:entra 1.1s ease-out both}
 .hero-fotos::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 40% 55% at 50% 52%,rgba(14,14,14,.55),rgba(14,14,14,.15) 70%,transparent),linear-gradient(0deg,rgba(14,14,14,.7),transparent 35%)}
 @keyframes entra{from{opacity:0;transform:translateX(-50%) scale(1.04)}to{opacity:1;transform:translateX(-50%)}}
 .hero .wrap{position:relative;z-index:1}
@@ -218,7 +217,6 @@ footer .brand span{color:var(--white)}
 <main id="inicio">
   <div class="hero">
     <div class="hero-fotos">
-      <img class="fondo" src="img/portada/modelos.jpg" alt="">
       <img class="modelos" src="img/portada/modelos.jpg" alt="Mujer con polo oversize y jean baggy, y hombre con polera estampada, de STREET FASHIÓN" fetchpriority="high">
     </div>
     <div class="wrap">
