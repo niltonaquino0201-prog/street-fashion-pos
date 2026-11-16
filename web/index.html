@@ -91,6 +91,8 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(36px,5vw,58px);lin
 .info{padding:16px 16px 18px;display:flex;flex-direction:column;gap:4px;flex:1}
 .info h3{font-size:16px;font-weight:700}
 .det{font-size:13px;color:var(--muted)}
+.det.sin{color:#b4232a;font-weight:600}
+.card.agotado .foto img{filter:grayscale(.6);opacity:.8}
 .precio{font-size:18px;font-weight:700;margin-top:4px}
 .precio.consultar{font-size:14px;color:var(--muted);font-weight:500}
 .pedir{margin-top:12px;justify-content:center;padding:11px 16px;font-size:14px}
@@ -348,35 +350,44 @@ footer .brand span{color:var(--white)}
   try { carrito = JSON.parse(localStorage.getItem("sf-carrito") || "[]").filter(x => x && x.id && x.cant > 0); } catch (e) { carrito = []; }
   const guardarCarrito = () => { try { localStorage.setItem("sf-carrito", JSON.stringify(carrito)); } catch (e) {} };
 
+  // Polos + Hombre se muestra como "Polos hombre", igual que en el catálogo.
+  const ORDEN_CATS = ["Polos hombre","Poleras hombre","Jeans hombre","Polos dama","Poleras dama","Jeans dama"];
+  const catWeb = (c, gen) => c ? c + (gen === "Hombre" ? " hombre" : gen === "Mujer" ? " dama" : "") : "";
+  const ordCat = c => { const i = ORDEN_CATS.indexOf(c); return i < 0 ? 99 : i; };
+  // Cada prenda del sistema se muestra una vez; "vars" solo trae las tallas y colores con stock.
   function grupos(){
     const g = {};
-    vars.filter(v => v.stock > 0).forEach(v => { (g[v.grupo] = g[v.grupo] || {k: v.grupo, nombre: v.nombre, categoria: v.categoria, genero: v.genero, descripcion: v.descripcion, vars: []}).vars.push(v); });
-    return Object.values(g).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    vars.forEach(v => { const x = (g[v.grupo] = g[v.grupo] || {k: v.grupo, nombre: v.nombre, categoria: v.categoria, genero: v.genero, descripcion: v.descripcion, foto: "", precios: [], vars: []});
+      x.precios.push(v.precio); if (!x.foto && v.foto) x.foto = v.foto; if (v.stock > 0) x.vars.push(v); });
+    return Object.values(g).sort((a, b) => (b.vars.length > 0) - (a.vars.length > 0) || ordCat(a.categoria) - ordCat(b.categoria) || a.nombre.localeCompare(b.nombre, "es"));
   }
-  const fotoDe = k => fotos[k] || fotoLocal[k] || "";
+  const fotoDe = (k, f) => fotos[k] || f || fotoLocal[k] || "";
   const fotoHTML = (src, alt) => src
     ? '<div class="foto"><img loading="lazy" src="' + esc(src) + '" alt="' + esc(alt) + '">'
     : '<div class="foto vacia"><img src="logo.png" alt="">Foto próximamente';
 
   function pintar(){
     const lista = modo === "tienda" ? grupos() : PRODUCTOS;
-    const cats = ["Todo"].concat([...new Set(lista.map(p => p.categoria).filter(Boolean))]);
+    const cats = ["Todo"].concat([...new Set(lista.map(p => p.categoria).filter(Boolean))].sort((a, b) => modo === "tienda" ? ordCat(a) - ordCat(b) : 0));
     if (!cats.includes(actual)) actual = "Todo";
     filtros.innerHTML = cats.map(c => '<button class="' + (c === actual ? "on" : "") + '">' + esc(c) + "</button>").join("");
     [...filtros.children].forEach((b, i) => b.onclick = () => { actual = cats[i]; pintar(); });
     $("cat-sub").textContent = modo === "tienda"
-      ? "Solo ves las tallas y colores que tenemos en stock. Arma tu pedido y lo separamos para ti."
+      ? "Elige tu prenda, talla y color, y arma tu pedido: lo separamos para ti. Si algo está agotado, consúltanos por WhatsApp."
       : "Elige tu prenda y pídela por WhatsApp. Te confirmamos tallas, colores y disponibilidad.";
     const vis = lista.filter(p => actual === "Todo" || p.categoria === actual);
     if (modo === "tienda") {
       grid.innerHTML = vis.length ? vis.map(g => {
-        const pr = g.vars.map(v => v.precio), min = Math.min(...pr), max = Math.max(...pr);
+        const hay = g.vars.length > 0, pr = hay ? g.vars.map(v => v.precio) : g.precios, min = Math.min(...pr), max = Math.max(...pr);
         const tallas = [...new Set(g.vars.map(v => v.talla).filter(Boolean))].sort(ordTalla);
-        return '<article class="card">' + fotoHTML(fotoDe(g.k), g.nombre) + (g.categoria ? '<span class="tag">' + esc(g.categoria) + "</span>" : "") + "</div>" +
+        const msg = "Hola STREET FASHIÓN, me interesa: " + g.nombre + " (" + soles(min) + "). ¿Cuándo lo tendrán disponible?";
+        return '<article class="card' + (hay ? "" : " agotado") + '">' + fotoHTML(fotoDe(g.k, g.foto), g.nombre) + (g.categoria ? '<span class="tag">' + esc(g.categoria) + "</span>" : "") + "</div>" +
           '<div class="info"><h3>' + esc(g.nombre) + "</h3>" +
-          (tallas.length ? '<div class="det">Tallas: ' + esc(tallas.join(", ")) + "</div>" : "") +
+          (hay ? (tallas.length ? '<div class="det">Tallas: ' + esc(tallas.join(", ")) + "</div>" : (g.descripcion ? '<div class="det">' + esc(g.descripcion) + "</div>" : ""))
+               : '<div class="det sin">Agotado por ahora</div>') +
           '<div class="precio">' + (max > min ? "Desde " : "") + soles(min) + "</div>" +
-          '<button class="btn btn-ink pedir" data-g="' + esc(g.k) + '">Elegir talla</button></div></article>';
+          (hay ? '<button class="btn btn-ink pedir" data-g="' + esc(g.k) + '">Elegir talla</button>'
+               : '<a class="btn btn-wa pedir" target="_blank" rel="noopener" href="' + wa(msg) + '"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg>Consultar</a>') + "</div></article>";
       }).join("") : '<p class="vacio">No hay productos disponibles en esta categoría por ahora.</p>';
       grid.querySelectorAll("[data-g]").forEach(b => b.onclick = () => abrirProducto(b.dataset.g));
     } else {
@@ -404,13 +415,13 @@ footer .brand span{color:var(--white)}
 
   let sel = null;
   function abrirProducto(k){
-    const g = grupos().find(x => x.k === k); if (!g) return;
+    const g = grupos().find(x => x.k === k); if (!g || !g.vars.length) return;
     const colores = [...new Set(g.vars.map(v => v.color || ""))];
     sel = {k, color: colores.length === 1 ? colores[0] : null, talla: null, cant: 1};
     pintarProducto();
   }
   function pintarProducto(){
-    const g = grupos().find(x => x.k === sel.k); if (!g) { cerrar(); return; }
+    const g = grupos().find(x => x.k === sel.k); if (!g || !g.vars.length) { cerrar(); return; }
     const colores = [...new Set(g.vars.map(v => v.color || ""))];
     const deColor = g.vars.filter(v => sel.color === null || (v.color || "") === sel.color);
     const tallas = [...new Set(deColor.map(v => v.talla || ""))].sort(ordTalla);
@@ -421,7 +432,7 @@ footer .brand span{color:var(--white)}
     if (v) sel.cant = Math.max(1, Math.min(sel.cant, libre));
     const chip = (tipo, val, on) => '<button class="chip' + (on ? " on" : "") + '" data-' + tipo + '="' + esc(val) + '">' + esc(val || "Único") + "</button>";
     abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button>' +
-      '<div class="prod">' + fotoHTML(fotoDe(g.k), g.nombre) + "</div>" +
+      '<div class="prod">' + fotoHTML(fotoDe(g.k, g.foto), g.nombre) + "</div>" +
       '<div><h3 class="m-tit">' + esc(g.nombre) + "</h3>" +
       '<div class="m-precio">' + (v ? soles(v.precio) : (Math.max(...g.vars.map(x => x.precio)) > Math.min(...g.vars.map(x => x.precio)) ? "Desde " : "") + soles(Math.min(...g.vars.map(x => x.precio)))) + "</div>" +
       (g.descripcion ? '<p class="m-desc">' + esc(g.descripcion) + "</p>" : "") +
@@ -533,7 +544,8 @@ footer .brand span{color:var(--white)}
       if (window.TIENDA_EMU) fsdb.useEmulator(TIENDA_EMU[0], TIENDA_EMU[1]); // solo para pruebas
       fsdb.collection("web_fotos").get().then(s => { s.docs.forEach(d => { if (d.data().foto) fotos[d.id] = d.data().foto; }); if (modo === "tienda") pintar(); }).catch(() => {});
       fsdb.collection("web_catalogo").onSnapshot(s => {
-        vars = s.docs.map(d => { const x = d.data(); return {id: d.id, grupo: x.grupo || gkey(x.nombre), nombre: String(x.nombre || ""), descripcion: String(x.descripcion || ""), categoria: String(x.categoria || ""),
+        vars = s.docs.map(d => { const x = d.data(), ft = String(x.foto || ""); return {id: d.id, grupo: x.grupo || gkey(x.nombre), nombre: String(x.nombre || ""), descripcion: String(x.descripcion || ""), categoria: catWeb(String(x.categoria || ""), String(x.genero || "")),
+          foto: /^img\/productos\/[\w.-]+$/.test(ft) ? ft : "",
           genero: String(x.genero || ""), talla: String(x.talla || ""), color: String(x.color || ""), precio: Number(x.precio) || 0, stock: Math.max(0, Number(x.stock) || 0)}; });
         modo = vars.some(v => v.stock > 0) ? "tienda" : "estatico";
         if (modo === "tienda") ajustarCarrito();
