@@ -7,6 +7,8 @@
 const NEGOCIO = {
   nombre: "STREET FASHIÓN",
   eslogan: "ELEVANDO TU ESTILO A OTRO NIVEL",
+  mision: "Ofrecer ropa urbana de calidad que permita a los jóvenes expresar su estilo y personalidad, brindando diseños actuales y exclusivos, cómodos y accesibles, alineados con las tendencias del momento.",
+  vision: "Ser una marca reconocida a nivel local y nacional en el sector de la moda urbana, destacando por su identidad propia, innovación constante y conexión con la cultura juvenil.",
   whatsapp: "51943369367",          // 51 + número, sin espacios
   telefonoVisible: "943 369 367",
   email: "niltonaquino0201@gmail.com",
