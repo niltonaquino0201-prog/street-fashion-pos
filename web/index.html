@@ -43,7 +43,7 @@ nav a:hover{opacity:1}
 .carro:hover{border-color:var(--white)}
 .carro svg{width:20px;height:20px}
 .carro b{background:var(--white);color:var(--ink);border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;font-size:12px;padding:0 6px}
-@media (max-width:420px){.carro span{display:none}}
+@media (max-width:520px){.carro span{display:none}.carro{padding:7px 10px}}
 .enc-nota{background:#f4efe3;border-radius:8px;padding:10px 12px;font-size:13px;margin:12px 0 4px}
 .item .enc{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;color:#8a5a00;background:#f4efe3;border-radius:4px;padding:1px 6px;margin-left:4px}
 
@@ -116,8 +116,10 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(36px,5vw,58px);lin
 .like.on{color:#e0245e}.like.on svg{fill:currentColor}
 .like.pop svg{animation:pop .35s ease}
 @keyframes pop{50%{transform:scale(1.35)}}
-.like-tienda{position:static;margin:22px auto 0;background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,.6);padding:9px 18px;font-size:14px;box-shadow:none;text-shadow:none}
-.like-tienda.on{color:var(--white);border-color:#e0245e;background:rgba(224,36,94,.25)}.like-tienda.on svg{color:#ff4f86}
+.hd-der{display:flex;align-items:center;gap:10px}
+.like-tienda svg{fill:none;stroke:currentColor;stroke-width:2}
+.like-tienda.on{border-color:#ff4f86}.like-tienda.on svg{fill:#ff4f86;stroke:#ff4f86}
+.like-tienda.pop svg{animation:pop .35s ease}
 .card.agotado .foto img{filter:grayscale(.6);opacity:.8}
 .precio{font-size:18px;font-weight:700;margin-top:4px}
 .precio.consultar{font-size:14px;color:var(--muted);font-weight:500}
@@ -230,7 +232,10 @@ footer .brand span{color:var(--white)}
       <a href="#ubicacion">Ubicación</a>
       <a href="#contacto">Contacto</a>
     </nav>
+    <div class="hd-der">
+    <button class="carro like-tienda" type="button" data-like="tienda" aria-label="Me gusta STREET FASHIÓN"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg><span>Me gusta</span><b data-likes="tienda">0</b></button>
     <button class="carro" id="carro" type="button" aria-label="Ver carrito" hidden><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M5 8h14l-1.2 12H6.2L5 8zM9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Carrito</span><b id="carro-n">0</b></button>
+    </div>
   </div>
 </header>
 
@@ -451,7 +456,7 @@ footer .brand span{color:var(--white)}
   }
   function pintarLikes(){
     document.querySelectorAll("[data-like]").forEach(b => { const k = b.dataset.like, on = !!misLikes[k]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-    document.querySelectorAll("[data-likes]").forEach(e => { const n = numLike(e.dataset.likes); e.textContent = e.dataset.likes === "tienda" ? (n ? "· " + n : "") : (n || ""); });
+    document.querySelectorAll("[data-likes]").forEach(e => { const n = numLike(e.dataset.likes); e.textContent = e.dataset.likes === "tienda" ? n : (n || ""); });
   }
   async function darLike(k, btn){
     const on = !misLikes[k];
