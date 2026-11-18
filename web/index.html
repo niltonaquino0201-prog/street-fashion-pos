@@ -38,6 +38,14 @@ nav{display:flex;gap:26px}
 nav a{text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
 nav a:hover{opacity:1}
 @media (max-width:720px){nav{display:none}}
+.carro{display:flex;align-items:center;gap:8px;background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,.55);border-radius:999px;padding:8px 14px;font:600 14px var(--body);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.carro[hidden]{display:none}
+.carro:hover{border-color:var(--white)}
+.carro svg{width:20px;height:20px}
+.carro b{background:var(--white);color:var(--ink);border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;font-size:12px;padding:0 6px}
+@media (max-width:420px){.carro span{display:none}}
+.enc-nota{background:#f4efe3;border-radius:8px;padding:10px 12px;font-size:13px;margin:12px 0 4px}
+.item .enc{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;color:#8a5a00;background:#f4efe3;border-radius:4px;padding:1px 6px;margin-left:4px}
 
 /* Portada */
 .hero{background:var(--ink);color:var(--white);overflow:hidden;position:relative}
@@ -211,6 +219,7 @@ footer .brand span{color:var(--white)}
       <a href="#ubicacion">Ubicación</a>
       <a href="#contacto">Contacto</a>
     </nav>
+    <button class="carro" id="carro" type="button" aria-label="Ver carrito" hidden><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M5 8h14l-1.2 12H6.2L5 8zM9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Carrito</span><b id="carro-n">0</b></button>
   </div>
 </header>
 
@@ -287,7 +296,7 @@ footer .brand span{color:var(--white)}
 
 <a class="wa-float" data-wa="Hola STREET FASHIÓN, quisiera más información." href="#" aria-label="Escríbenos por WhatsApp"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg></a>
 
-<button class="barra" id="barra" hidden><span>Ver mi pedido</span><b id="barra-t"></b></button>
+<button class="barra" id="barra" hidden><span>Ver carrito</span><b id="barra-t"></b></button>
 <div class="aviso" id="aviso" role="status" hidden></div>
 <div class="modal" id="modal" hidden><div class="caja" id="modal-caja" role="dialog" aria-modal="true"></div></div>
 
@@ -369,8 +378,8 @@ footer .brand span{color:var(--white)}
   // Cada prenda del sistema se muestra una vez; "vars" solo trae las tallas y colores con stock.
   function grupos(){
     const g = {};
-    vars.forEach(v => { const x = (g[v.grupo] = g[v.grupo] || {k: v.grupo, nombre: v.nombre, categoria: v.categoria, genero: v.genero, descripcion: v.descripcion, foto: "", precios: [], vars: []});
-      x.precios.push(v.precio); if (!x.foto && v.foto) x.foto = v.foto; if (v.stock > 0) x.vars.push(v); });
+    vars.forEach(v => { const x = (g[v.grupo] = g[v.grupo] || {k: v.grupo, nombre: v.nombre, categoria: v.categoria, genero: v.genero, descripcion: v.descripcion, foto: "", precios: [], vars: [], todas: []});
+      x.precios.push(v.precio); x.todas.push(v); if (!x.foto && v.foto) x.foto = v.foto; if (v.stock > 0) x.vars.push(v); });
     return Object.values(g).sort((a, b) => (b.vars.length > 0) - (a.vars.length > 0) || ordCat(a.categoria) - ordCat(b.categoria) || a.nombre.localeCompare(b.nombre, "es"));
   }
   const fotoDe = (k, f) => fotos[k] || f || fotoLocal[k] || "";
@@ -385,21 +394,19 @@ footer .brand span{color:var(--white)}
     filtros.innerHTML = cats.map(c => '<button class="' + (c === actual ? "on" : "") + '">' + esc(c) + "</button>").join("");
     [...filtros.children].forEach((b, i) => b.onclick = () => { actual = cats[i]; pintar(); });
     $("cat-sub").textContent = modo === "tienda"
-      ? "Elige tu prenda, talla y color, y arma tu pedido: lo separamos para ti. Si algo está agotado, consúltanos por WhatsApp."
+      ? "Agrega al carrito todas las prendas que quieras y envía un solo pedido. Lo que tenemos en tienda lo separamos al instante; lo demás te lo confirmamos por WhatsApp."
       : "Elige tu prenda y pídela por WhatsApp. Te confirmamos tallas, colores y disponibilidad.";
     const vis = lista.filter(p => actual === "Todo" || p.categoria === actual || (actual[0] === "@" && String(p.categoria || "").toLowerCase().endsWith(actual.slice(1))));
     if (modo === "tienda") {
       grid.innerHTML = vis.length ? vis.map(g => {
         const hay = g.vars.length > 0, pr = hay ? g.vars.map(v => v.precio) : g.precios, min = Math.min(...pr), max = Math.max(...pr);
         const tallas = [...new Set(g.vars.map(v => v.talla).filter(Boolean))].sort(ordTalla);
-        const msg = "Hola STREET FASHIÓN, me interesa: " + g.nombre + " (" + soles(min) + "). ¿Cuándo lo tendrán disponible?";
         return '<article class="card' + (hay ? "" : " agotado") + '">' + fotoHTML(fotoDe(g.k, g.foto), g.nombre) + (g.categoria ? '<span class="tag">' + esc(g.categoria) + "</span>" : "") + "</div>" +
           '<div class="info"><h3>' + esc(g.nombre) + "</h3>" +
           (hay ? (tallas.length ? '<div class="det">Tallas: ' + esc(tallas.join(", ")) + "</div>" : (g.descripcion ? '<div class="det">' + esc(g.descripcion) + "</div>" : ""))
-               : '<div class="det sin">Agotado por ahora</div>') +
+               : '<div class="det sin">A pedido · te confirmamos stock</div>') +
           '<div class="precio">' + (max > min ? "Desde " : "") + soles(min) + "</div>" +
-          (hay ? '<button class="btn btn-ink pedir" data-g="' + esc(g.k) + '">Elegir talla</button>'
-               : '<a class="btn btn-wa pedir" target="_blank" rel="noopener" href="' + wa(msg) + '"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg>Consultar</a>') + "</div></article>";
+          '<button class="btn btn-ink pedir" data-g="' + esc(g.k) + '">' + (hay ? "Elegir talla" : "Agregar al carrito") + "</button>" + "</div></article>";
       }).join("") : '<p class="vacio">No hay productos disponibles en esta categoría por ahora.</p>';
       grid.querySelectorAll("[data-g]").forEach(b => b.onclick = () => abrirProducto(b.dataset.g));
     } else {
@@ -429,10 +436,41 @@ footer .brand span{color:var(--white)}
 
   let sel = null;
   function abrirProducto(k){
-    const g = grupos().find(x => x.k === k); if (!g || !g.vars.length) return;
+    const g = grupos().find(x => x.k === k); if (!g) return;
+    if (!g.vars.length) { sel = {k, enc: true, color: null, talla: null, cant: 1}; pintarEncargo(); return; }
     const colores = [...new Set(g.vars.map(v => v.color || ""))];
     sel = {k, color: colores.length === 1 ? colores[0] : null, talla: null, cant: 1};
     pintarProducto();
+  }
+  // Prenda sin stock: se agrega "a pedido" y el pedido llega al sistema para confirmar disponibilidad.
+  const TALLAS_STD = c => /jean|pantal|short|bermuda/i.test(c || "") ? ["28","30","32","34","36"] : ["S","M","L","XL"];
+  function pintarEncargo(){
+    const g = grupos().find(x => x.k === sel.k); if (!g) { cerrar(); return; }
+    if (g.vars.length) { sel = {k: g.k, color: null, talla: null, cant: 1}; pintarProducto(); return; }
+    const colores = [...new Set(g.todas.map(v => v.color).filter(Boolean))];
+    const tSis = [...new Set(g.todas.map(v => v.talla).filter(Boolean))].sort(ordTalla), tallas = tSis.length ? tSis : TALLAS_STD(g.categoria);
+    const v = g.todas.find(x => (!sel.color || x.color === sel.color) && (!tSis.length || x.talla === sel.talla)) || g.todas[0];
+    const listo = (!colores.length || sel.color) && sel.talla;
+    const chip = (tipo, val, on) => '<button class="chip' + (on ? " on" : "") + '" data-' + tipo + '="' + esc(val) + '">' + esc(val) + "</button>";
+    abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button>' +
+      '<div class="prod">' + fotoHTML(fotoDe(g.k, g.foto), g.nombre) + "</div>" +
+      '<div><h3 class="m-tit">' + esc(g.nombre) + "</h3>" +
+      '<div class="m-precio">' + soles(v.precio) + "</div>" +
+      (g.descripcion ? '<p class="m-desc">' + esc(g.descripcion) + "</p>" : "") +
+      (colores.length ? '<div class="m-lbl">Color</div><div class="chips">' + colores.map(c => chip("color", c, c === sel.color)).join("") + "</div>" : "") +
+      '<div class="m-lbl">Talla</div><div class="chips">' + tallas.map(t => chip("talla", t, t === sel.talla)).join("") + "</div>" +
+      '<div class="m-lbl">Cantidad</div><div class="cant"><button data-mas="-1" aria-label="Menos">−</button><span>' + sel.cant + '</span><button data-mas="1" aria-label="Más">+</button></div>' +
+      '<p class="enc-nota">Esta prenda es <b>a pedido</b>: al recibir tu pedido te confirmamos por WhatsApp la talla y la fecha de entrega antes de cobrar.</p>' +
+      '<button class="btn btn-ink ancho" id="m-add"' + (listo ? "" : " disabled") + ">" + (listo ? "Agregar al carrito" : "Elige " + (colores.length && !sel.color ? "color y talla" : "tu talla")) + "</button></div></div>");
+    caja.querySelectorAll("[data-color]").forEach(b => b.onclick = () => { sel.color = b.dataset.color; pintarEncargo(); });
+    caja.querySelectorAll("[data-talla]").forEach(b => b.onclick = () => { sel.talla = b.dataset.talla; pintarEncargo(); });
+    caja.querySelectorAll("[data-mas]").forEach(b => b.onclick = () => { sel.cant = Math.max(1, Math.min(10, sel.cant + Number(b.dataset.mas))); pintarEncargo(); });
+    const add = $("m-add");
+    if (add && listo) add.onclick = () => {
+      const c = carrito.find(x => x.enc && x.id === v.id && x.talla === sel.talla && (x.color || "") === (sel.color || ""));
+      if (c) c.cant = Math.min(10, c.cant + sel.cant); else carrito.push({id: v.id, cant: sel.cant, enc: 1, talla: sel.talla, color: sel.color || ""});
+      guardarCarrito(); cerrar(); pintarBarra(); avisar("Agregado al carrito: " + g.nombre + " · Talla " + sel.talla);
+    };
   }
   function pintarProducto(){
     const g = grupos().find(x => x.k === sel.k); if (!g || !g.vars.length) { cerrar(); return; }
@@ -442,7 +480,7 @@ footer .brand span{color:var(--white)}
     if (tallas.length === 1 && sel.color !== null) sel.talla = tallas[0];
     if (sel.talla !== null && !tallas.includes(sel.talla)) sel.talla = null;
     const v = sel.color !== null && sel.talla !== null ? g.vars.find(x => (x.color || "") === sel.color && (x.talla || "") === sel.talla) : null;
-    const enCarro = v ? (carrito.find(x => x.id === v.id) || {cant: 0}).cant : 0, libre = v ? v.stock - enCarro : 0;
+    const enCarro = v ? (carrito.find(x => !x.enc && x.id === v.id) || {cant: 0}).cant : 0, libre = v ? v.stock - enCarro : 0;
     if (v) sel.cant = Math.max(1, Math.min(sel.cant, libre));
     const chip = (tipo, val, on) => '<button class="chip' + (on ? " on" : "") + '" data-' + tipo + '="' + esc(val) + '">' + esc(val || "Único") + "</button>";
     abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button>' +
@@ -454,15 +492,15 @@ footer .brand span{color:var(--white)}
       '<div class="m-lbl">Talla</div><div class="chips">' + (sel.color === null ? '<span class="m-nota">Primero elige un color</span>' : tallas.map(t => chip("talla", t, t === sel.talla)).join("")) + "</div>" +
       (v ? '<div class="m-lbl">Cantidad</div><div class="cant"><button data-mas="-1" aria-label="Menos">−</button><span>' + sel.cant + '</span><button data-mas="1" aria-label="Más">+</button>' +
         '<small>' + (libre <= 0 ? "Ya tienes todo el stock en tu pedido" : v.stock <= 3 ? "¡Quedan " + v.stock + "!" : "Disponible") + "</small></div>" : "") +
-      '<button class="btn btn-ink ancho" id="m-add"' + (v && libre > 0 ? "" : " disabled") + ">" + (v ? "Agregar a mi pedido" : "Elige color y talla") + "</button></div></div>");
+      '<button class="btn btn-ink ancho" id="m-add"' + (v && libre > 0 ? "" : " disabled") + ">" + (v ? "Agregar al carrito" : "Elige color y talla") + "</button></div></div>");
     caja.querySelectorAll("[data-color]").forEach(b => b.onclick = () => { sel.color = b.dataset.color; sel.talla = null; sel.cant = 1; pintarProducto(); });
     caja.querySelectorAll("[data-talla]").forEach(b => b.onclick = () => { sel.talla = b.dataset.talla; sel.cant = 1; pintarProducto(); });
     caja.querySelectorAll("[data-mas]").forEach(b => b.onclick = () => { sel.cant = Math.max(1, Math.min(libre, sel.cant + Number(b.dataset.mas))); pintarProducto(); });
     const add = $("m-add");
     if (add && v) add.onclick = () => {
-      const c = carrito.find(x => x.id === v.id);
+      const c = carrito.find(x => !x.enc && x.id === v.id);
       if (c) c.cant += sel.cant; else carrito.push({id: v.id, cant: sel.cant});
-      guardarCarrito(); cerrar(); pintarBarra(); avisar("Agregado: " + g.nombre + " · " + [v.talla && "Talla " + v.talla, v.color].filter(Boolean).join(" · "));
+      guardarCarrito(); cerrar(); pintarBarra(); avisar("Agregado al carrito: " + g.nombre + " · " + [v.talla && "Talla " + v.talla, v.color].filter(Boolean).join(" · "));
     };
   }
 
@@ -470,26 +508,31 @@ footer .brand span{color:var(--white)}
   const varDe = id => vars.find(v => v.id === id);
   function ajustarCarrito(){
     let cambio = false;
-    carrito = carrito.filter(c => { const v = varDe(c.id); if (!v || v.stock <= 0) { cambio = true; return false; } if (c.cant > v.stock) { c.cant = v.stock; cambio = true; } return true; });
-    if (cambio) { guardarCarrito(); avisar("Actualizamos tu pedido: alguna prenda se agotó o quedan menos unidades"); }
+    carrito = carrito.filter(c => { const v = varDe(c.id); if (!v) { cambio = true; return false; } if (c.enc) return true;
+      if (v.stock <= 0) { c.enc = 1; c.talla = v.talla; c.color = v.color; cambio = true; } else if (c.cant > v.stock) { c.cant = v.stock; cambio = true; } return true; });
+    if (cambio) { guardarCarrito(); avisar("Actualizamos tu carrito: alguna prenda se agotó o quedan menos unidades"); }
   }
   const totalCarrito = () => carrito.reduce((a, c) => { const v = varDe(c.id); return a + (v ? v.precio * c.cant : 0); }, 0);
   function pintarBarra(){
     const b = $("barra"), n = carrito.reduce((a, c) => a + c.cant, 0);
+    $("carro").hidden = modo !== "tienda"; $("carro-n").textContent = n;
     b.hidden = modo !== "tienda" || !n;
     if (!b.hidden) $("barra-t").textContent = n + (n === 1 ? " prenda" : " prendas") + " · " + soles(totalCarrito());
   }
   $("barra").onclick = () => abrirCarrito();
+  $("carro").onclick = () => abrirCarrito();
   let form = {cliente: "", telefono: "", entrega: "tienda", direccion: "", pago: "", nota: ""};
   try { form = Object.assign(form, JSON.parse(localStorage.getItem("sf-cliente") || "{}")); } catch (e) {}
   function abrirCarrito(err){
     ajustarCarrito();
-    if (!carrito.length) { cerrar(); pintarBarra(); return; }
-    const filas = carrito.map((c, i) => { const v = varDe(c.id);
-      return '<div class="item"><img src="' + esc(fotoDe(v.grupo) || "logo.png") + '" alt=""><div><b>' + esc(v.nombre) + "</b><small>" + esc([v.talla && "Talla " + v.talla, v.color].filter(Boolean).join(" · ")) + "</small>" +
-        '<div class="cant sm"><button data-i="' + i + '" data-d="-1" aria-label="Menos">−</button><span>' + c.cant + '</span><button data-i="' + i + '" data-d="1" aria-label="Más"' + (c.cant >= v.stock ? " disabled" : "") + ">+</button></div></div><b>" + soles(v.precio * c.cant) + "</b></div>"; }).join("");
+    pintarBarra();
+    if (!carrito.length) { abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><h3 class="m-tit">Mi carrito</h3><p class="m-desc">Tu carrito está vacío. Elige las prendas que te gusten en el catálogo y agrégalas aquí para enviar un solo pedido.</p><a class="btn btn-ink ancho" href="#catalogo" data-cerrar>Ver catálogo</a>'); return; }
+    const filas = carrito.map((c, i) => { const v = varDe(c.id), t = c.enc ? c.talla : v.talla, co = c.enc ? c.color : v.color;
+      return '<div class="item"><img src="' + esc(fotoDe(v.grupo, v.foto) || "logo.png") + '" alt=""><div><b>' + esc(v.nombre) + "</b><small>" + esc([t && "Talla " + t, co].filter(Boolean).join(" · ")) + (c.enc ? '<span class="enc">A pedido</span>' : "") + "</small>" +
+        '<div class="cant sm"><button data-i="' + i + '" data-d="-1" aria-label="Menos">−</button><span>' + c.cant + '</span><button data-i="' + i + '" data-d="1" aria-label="Más"' + (c.cant >= maxDe(c) ? " disabled" : "") + ">+</button></div></div><b>" + soles(v.precio * c.cant) + "</b></div>"; }).join("");
+    const hayEnc = carrito.some(c => c.enc);
     const pagos = PAGOS_WEB.map(p => '<label class="op"><input type="radio" name="pago" value="' + esc(p.nombre) + '"' + (form.pago === p.nombre ? " checked" : "") + "><span><b>" + esc(p.nombre) + "</b><small>" + esc(p.detalle) + "</small>" + (p.qr ? '<img class="qr" src="' + esc(p.qr) + '" alt="QR de ' + esc(p.nombre) + '">' : "") + "</span></label>").join("");
-    abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><h3 class="m-tit">Mi pedido</h3>' + filas +
+    abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><h3 class="m-tit">Mi carrito</h3>' + filas +
       '<div class="tot"><span>Total</span><b>' + soles(totalCarrito()) + "</b></div>" +
       '<form id="f-ped" class="fpe" novalidate>' +
       '<label>Nombre y apellido<input name="cliente" maxlength="80" required value="' + esc(form.cliente) + '" autocomplete="name"></label>' +
@@ -502,12 +545,13 @@ footer .brand span{color:var(--white)}
       '<label>Nota (opcional)<textarea name="nota" maxlength="300" rows="2">' + esc(form.nota) + "</textarea></label>" +
       '<p class="err" id="f-err">' + esc(err || "") + "</p>" +
       '<button class="btn btn-ink ancho" type="submit" id="f-env">Enviar pedido</button>' +
-      '<p class="m-nota">Separamos tus prendas apenas recibimos el pedido y te escribimos por WhatsApp para confirmar.</p></form>');
+      '<p class="m-nota">' + (hayEnc ? "Las prendas en tienda las separamos al instante. Las que son a pedido te las confirmamos por WhatsApp antes de cobrar." : "Separamos tus prendas apenas recibimos el pedido y te escribimos por WhatsApp para confirmar.") + "</p></form>");
     caja.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { leerForm(); const c = carrito[b.dataset.i], v = varDe(c.id);
-      c.cant = Math.min(v.stock, c.cant + Number(b.dataset.d)); if (c.cant <= 0) carrito.splice(b.dataset.i, 1); guardarCarrito(); pintarBarra(); abrirCarrito(); });
+      c.cant = Math.min(maxDe(c), c.cant + Number(b.dataset.d)); if (c.cant <= 0) carrito.splice(b.dataset.i, 1); guardarCarrito(); pintarBarra(); abrirCarrito(); });
     caja.querySelectorAll('input[name="entrega"]').forEach(r => r.onchange = () => { $("l-dir").hidden = r.value !== "delivery" || !r.checked; });
     $("f-ped").onsubmit = e => { e.preventDefault(); enviar(); };
   }
+  function maxDe(c){ const v = varDe(c.id); return c.enc ? 10 : (v ? v.stock : 0); }
   function leerForm(){
     const f = $("f-ped"); if (!f) return;
     const d = new FormData(f);
@@ -523,7 +567,8 @@ footer .brand span{color:var(--white)}
     const err = !carrito.length ? "Tu pedido está vacío." : form.cliente.length < 2 ? "Escribe tu nombre." : tel.length < 9 ? "Escribe tu número de celular." :
       form.entrega === "delivery" && form.direccion.length < 5 ? "Escribe la dirección de entrega." : !form.pago ? "Elige un método de pago." : "";
     if (err) { abrirCarrito(err); return; }
-    const items = carrito.map(c => { const v = varDe(c.id); return {id: v.id, nombre: v.nombre, talla: v.talla || "", color: v.color || "", precio: v.precio, cant: c.cant}; });
+    const items = carrito.slice(0, 20).map(c => { const v = varDe(c.id), x = {id: v.id, nombre: v.nombre, talla: (c.enc ? c.talla : v.talla) || "", color: (c.enc ? c.color : v.color) || "", precio: v.precio, cant: c.cant}; if (c.enc) x.apedido = true; return x; });
+    const hayEnc = items.some(x => x.apedido);
     const total = Math.round(items.reduce((a, x) => a + x.precio * x.cant, 0) * 100) / 100;
     const doc = {fecha: firebase.firestore.FieldValue.serverTimestamp(), cliente: form.cliente, telefono: tel, entrega: form.entrega, pago: form.pago, items, total, estado: "nuevo"};
     if (form.entrega === "delivery") doc.direccion = form.direccion;
@@ -533,15 +578,16 @@ footer .brand span{color:var(--white)}
       const ref = fsdb.collection("pedidos").doc();
       await Promise.race([ref.set(doc), new Promise((_, rej) => setTimeout(() => rej(new Error("tiempo")), 20000))]);
       const cod = "W-" + ref.id.slice(-6).toUpperCase(), pago = PAGOS_WEB.find(p => p.nombre === form.pago) || {};
-      const msg = "Hola STREET FASHIÓN, hice el pedido " + cod + " en la web:\n" + items.map(x => "• " + x.cant + " × " + x.nombre + " " + [x.talla && "T." + x.talla, x.color].filter(Boolean).join(" ") + " — " + soles(x.precio * x.cant)).join("\n") +
+      const msg = "Hola STREET FASHIÓN, hice el pedido " + cod + " en la web:\n" + items.map(x => "• " + x.cant + " × " + x.nombre + " " + [x.talla && "T." + x.talla, x.color].filter(Boolean).join(" ") + (x.apedido ? " (a pedido)" : "") + " — " + soles(x.precio * x.cant)).join("\n") +
         "\nTotal: " + soles(total) + "\nPago: " + form.pago + "\nEntrega: " + (form.entrega === "delivery" ? "Delivery a " + form.direccion : "Recojo en tienda") + "\nA nombre de: " + form.cliente;
       carrito = []; guardarCarrito(); form.nota = ""; pintarBarra();
       abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><div class="ok"><div class="ok-i">✓</div><h3 class="m-tit">¡Pedido recibido!</h3>' +
-        '<p>Tu código de pedido es <b>' + cod + "</b>. Ya separamos tus prendas.</p>" +
-        (pago.detalle ? '<p class="m-desc">' + esc(pago.detalle) + "</p>" : "") +
-        (pago.qr ? '<p class="m-desc"><b>Total a pagar: ' + soles(total) + '</b></p><img class="qr qr-ok" src="' + esc(pago.qr) + '" alt="QR de ' + esc(pago.nombre) + '">' : "") +
+        '<p>Tu código de pedido es <b>' + cod + "</b>. " + (hayEnc ? "Te escribiremos por WhatsApp para confirmar las prendas a pedido." : "Ya separamos tus prendas.") + "</p>" +
+        (pago.detalle && !hayEnc ? '<p class="m-desc">' + esc(pago.detalle) + "</p>" : "") +
+        (hayEnc ? '<p class="m-desc">No pagues todavía: primero te confirmamos la disponibilidad y el total por WhatsApp.</p>' : "") +
+        (pago.qr && !hayEnc ? '<p class="m-desc"><b>Total a pagar: ' + soles(total) + '</b></p><img class="qr qr-ok" src="' + esc(pago.qr) + '" alt="QR de ' + esc(pago.nombre) + '">' : "") +
         '<a class="btn btn-wa ancho" target="_blank" rel="noopener" href="' + wa(msg) + '"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg>Avisar por WhatsApp</a>' +
-        '<p class="m-nota">Escríbenos para confirmar tu pedido' + (/yape|plin|transfer/i.test(form.pago) ? " y envíanos la captura del pago." : ".") + "</p></div>");
+        '<p class="m-nota">Escríbenos para confirmar tu pedido' + (/yape|plin|transfer/i.test(form.pago) && !hayEnc ? " y envíanos la captura del pago." : ".") + "</p></div>");
     } catch (e) {
       abrirCarrito("No se pudo enviar el pedido. Revisa tu conexión e inténtalo otra vez, o escríbenos por WhatsApp.");
     } finally { enviando = false; }
@@ -561,10 +607,10 @@ footer .brand span{color:var(--white)}
         vars = s.docs.map(d => { const x = d.data(), ft = String(x.foto || ""); return {id: d.id, grupo: x.grupo || gkey(x.nombre), nombre: String(x.nombre || ""), descripcion: String(x.descripcion || ""), categoria: catWeb(String(x.categoria || ""), String(x.genero || "")),
           foto: /^img\/productos\/[\w.-]+$/.test(ft) ? ft : "",
           genero: String(x.genero || ""), talla: String(x.talla || ""), color: String(x.color || ""), precio: Number(x.precio) || 0, stock: Math.max(0, Number(x.stock) || 0)}; });
-        modo = vars.some(v => v.stock > 0) ? "tienda" : "estatico";
+        modo = vars.length ? "tienda" : "estatico";
         if (modo === "tienda") ajustarCarrito();
         pintar();
-        if (!modal.hidden && sel && caja.querySelector(".prod")) pintarProducto();
+        if (!modal.hidden && sel && caja.querySelector(".prod")) (sel.enc ? pintarEncargo : pintarProducto)();
       }, () => {});
     }
   } catch (e) {}
