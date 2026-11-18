@@ -32,6 +32,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if trabajador();
     }
+    // Página web: "me gusta" de la tienda y de cada prenda; solo se puede sumar o restar 1.
+    match /likes/{id} {
+      allow read: if true;
+      allow create: if id.size() <= 90 && request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == 1;
+      allow update: if request.resource.data.keys().hasOnly(['n'])
+        && (request.resource.data.n == resource.data.n + 1 || (request.resource.data.n == resource.data.n - 1 && resource.data.n > 0));
+      allow delete: if dueno();
+    }
     // Página web: cualquiera puede enviar un pedido nuevo, pero no leer ni cambiar pedidos.
     match /pedidos/{id} {
       allow create: if pedidoValido(request.resource.data);
