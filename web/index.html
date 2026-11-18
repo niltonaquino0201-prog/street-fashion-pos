@@ -185,6 +185,9 @@ footer .brand span{color:var(--white)}
 .item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
 .item img{width:64px;height:64px;object-fit:cover;border:1px solid var(--line)}
 .item small{display:block;color:var(--muted);font-size:13px}
+.tacho{width:30px;height:30px;display:grid;place-items:center;background:transparent;border:1px solid var(--line);border-radius:6px;color:#b42318;cursor:pointer;margin-left:6px}
+.tacho:hover{background:#fdecea;border-color:#b42318}
+.tacho svg{width:16px;height:16px}
 .tot{display:flex;justify-content:space-between;font-size:20px;padding:14px 0 4px}
 .fpe label{display:block;font-size:14px;font-weight:600;margin-top:14px}
 .fpe label[hidden]{display:none}
@@ -529,7 +532,8 @@ footer .brand span{color:var(--white)}
     if (!carrito.length) { abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><h3 class="m-tit">Mi carrito</h3><p class="m-desc">Tu carrito está vacío. Elige las prendas que te gusten en el catálogo y agrégalas aquí para enviar un solo pedido.</p><a class="btn btn-ink ancho" href="#catalogo" data-cerrar>Ver catálogo</a>'); return; }
     const filas = carrito.map((c, i) => { const v = varDe(c.id), t = c.enc ? c.talla : v.talla, co = c.enc ? c.color : v.color;
       return '<div class="item"><img src="' + esc(fotoDe(v.grupo, v.foto) || "logo.png") + '" alt=""><div><b>' + esc(v.nombre) + "</b><small>" + esc([t && "Talla " + t, co].filter(Boolean).join(" · ")) + (c.enc ? '<span class="enc">A pedido</span>' : "") + "</small>" +
-        '<div class="cant sm"><button data-i="' + i + '" data-d="-1" aria-label="Menos">−</button><span>' + c.cant + '</span><button data-i="' + i + '" data-d="1" aria-label="Más"' + (c.cant >= maxDe(c) ? " disabled" : "") + ">+</button></div></div><b>" + soles(v.precio * c.cant) + "</b></div>"; }).join("");
+        '<div class="cant sm"><button data-i="' + i + '" data-d="-1" aria-label="Menos">−</button><span>' + c.cant + '</span><button data-i="' + i + '" data-d="1" aria-label="Más"' + (c.cant >= maxDe(c) ? " disabled" : "") + ">+</button>" +
+        '<button class="tacho" data-del="' + i + '" aria-label="Quitar del carrito" title="Quitar del carrito"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div><b>' + soles(v.precio * c.cant) + "</b></div>"; }).join("");
     const hayEnc = carrito.some(c => c.enc);
     const pagos = PAGOS_WEB.map(p => '<label class="op"><input type="radio" name="pago" value="' + esc(p.nombre) + '"' + (form.pago === p.nombre ? " checked" : "") + "><span><b>" + esc(p.nombre) + "</b><small>" + esc(p.detalle) + "</small>" + (p.qr ? '<img class="qr" src="' + esc(p.qr) + '" alt="QR de ' + esc(p.nombre) + '">' : "") + "</span></label>").join("");
     abrir('<button class="cerrar" data-cerrar aria-label="Cerrar">×</button><h3 class="m-tit">Mi carrito</h3>' + filas +
@@ -548,6 +552,8 @@ footer .brand span{color:var(--white)}
       '<p class="m-nota">' + (hayEnc ? "Las prendas en tienda las separamos al instante. Las que son a pedido te las confirmamos por WhatsApp antes de cobrar." : "Separamos tus prendas apenas recibimos el pedido y te escribimos por WhatsApp para confirmar.") + "</p></form>");
     caja.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { leerForm(); const c = carrito[b.dataset.i], v = varDe(c.id);
       c.cant = Math.min(maxDe(c), c.cant + Number(b.dataset.d)); if (c.cant <= 0) carrito.splice(b.dataset.i, 1); guardarCarrito(); pintarBarra(); abrirCarrito(); });
+    caja.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { leerForm(); const c = carrito[b.dataset.del], v = c && varDe(c.id);
+      carrito.splice(b.dataset.del, 1); guardarCarrito(); pintarBarra(); abrirCarrito(); if (v) avisar("Quitado del carrito: " + v.nombre); });
     caja.querySelectorAll('input[name="entrega"]').forEach(r => r.onchange = () => { $("l-dir").hidden = r.value !== "delivery" || !r.checked; });
     $("f-ped").onsubmit = e => { e.preventDefault(); enviar(); };
   }
