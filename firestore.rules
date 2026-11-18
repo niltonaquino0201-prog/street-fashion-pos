@@ -17,6 +17,8 @@ service cloud.firestore {
     match /compras/{id} { allow read, write: if trabajador(); }
     match /cotizaciones/{id} { allow read, write: if trabajador(); }
     match /escaneos/{id} { allow read, write: if trabajador(); }
+    match /clientes/{id} { allow read, write: if trabajador(); }
+    match /proveedores/{id} { allow read, write: if trabajador(); }
     match /config/{id} {
       allow read: if trabajador();
       allow write: if trabajador() && id == "correlativos";
