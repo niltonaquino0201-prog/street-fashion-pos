@@ -159,6 +159,7 @@ footer .brand span{color:var(--white)}
 .redes a:hover{background:var(--white);color:var(--ink)}
 .redes svg{width:20px;height:20px}
 .legal{width:100%;border-top:1px solid #2c2a28;padding-top:22px;font-size:13px}
+.legal a{color:var(--white)}
 
 
 /* Tienda en línea */
@@ -307,7 +308,7 @@ footer .brand span{color:var(--white)}
   <div class="wrap">
     <a class="brand" href="#inicio"><img src="logo.png" alt=""><span>STREET FASHIÓN</span></a>
     <div class="redes" id="redes"></div>
-    <div class="legal">© <span id="anio"></span> STREET FASHIÓN SAC · Villa Casagrande, La Arena, Piura, Perú</div>
+    <div class="legal">© <span id="anio"></span> STREET FASHIÓN SAC · Villa Casagrande, La Arena, Piura, Perú · <a href="terminos.html">Términos y condiciones</a></div>
   </div>
 </footer>
 
@@ -590,6 +591,7 @@ footer .brand span{color:var(--white)}
       '<div class="m-lbl">Método de pago</div>' + pagos +
       '<label>Nota (opcional)<textarea name="nota" maxlength="300" rows="2">' + esc(form.nota) + "</textarea></label>" +
       '<p class="err" id="f-err">' + esc(err || "") + "</p>" +
+      '<p class="m-nota">Al enviar tu pedido aceptas nuestros <a href="terminos.html" target="_blank" rel="noopener">Términos y condiciones</a>.</p>' +
       '<button class="btn btn-ink ancho" type="submit" id="f-env">Enviar pedido</button>' +
       '<p class="m-nota">' + (hayEnc ? "Las prendas en tienda las separamos al instante. Las que son a pedido te las confirmamos por WhatsApp antes de cobrar." : "Separamos tus prendas apenas recibimos el pedido y te escribimos por WhatsApp para confirmar.") + "</p></form>");
     caja.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { leerForm(); const c = carrito[b.dataset.i], v = varDe(c.id);
